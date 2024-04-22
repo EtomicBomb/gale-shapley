@@ -52,7 +52,7 @@ pred wellformed_matching[m: Matching] {
 
 pred wellformed {
     all m: Matching | wellformed_matching[m]
-    all px: Proposer | wellformed_px_pref[px] 
+    all px: Proposer | wellformed_px_pref[px]
     all rx: Receiver | wellformed_rx_pref[rx]
 }
 
@@ -73,23 +73,16 @@ test expect {
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
-        let mx = px.(m.matching) | 
+        let mx = px.(m.matching) |
             some mx => rx.(px.px_pref) > mx.(px.px_pref) else some rx.(px.px_pref)
-        let mx = (m.matching).rx | 
+        let mx = (m.matching).rx |
             some mx => px.(rx.rx_pref) > mx.(rx.rx_pref) else some px.(rx.rx_pref)
     }
 }
 
 test expect {
-    stableBlockingPairSat: {
-        some m: Matching | some m.matching and stable_blocking_pair[m]
-    } for 5 Proposer, 5 Receiver is sat
-    stableBlockingPairNotSat: {
-        some m: Matching | some m.matching and not stable_blocking_pair[m]
-    } for 5 Proposer, 5 Receiver is sat
-
     unstableTwoNoAssignment: {
-        all m: Matching | {
+        all m: Matching {
             {
                 wellformed
                 some px: Proposer, rx: Receiver {
@@ -99,25 +92,43 @@ test expect {
                     no (m.matching).rx
                 }
             } => not stable_blocking_pair[m]
-        } 
+        }
     } for 1 Matching, 5 Proposer, 5 Receiver is theorem
+    // ^ this test, but if they both have matchings, or if only one has a matching
 
+    // a test for a non-trivial scenario where we imply stable_blocking_pair (instead of not stable blocking pair)
 }
 
-// individual rationality: A matching is individually rational if each participant prefers their assigned match to being unmatched
+// individual rationality: A matching is individually rational if each participant 
+// prefers their assigned match to being unmatched
 pred stable_rationality[m: Matching] {
     // if a participant is matched, they must have a preference for the other person
-    all px: Proposer | px.(m.matching) in (px.px_pref).Int    
+    all px: Proposer | px.(m.matching) in (px.px_pref).Int
     all rx: Receiver | (m.matching).rx in (rx.rx_pref).Int
 }
 
 test expect {
-    stableRationalitySat: {
-        some m: Matching | some m.matching and stable_rationality[m]
-    } for 5 Proposer, 5 Receiver is sat
-    stableRationalityNotSat: {
-        some m: Matching | some m.matching and not stable_rationality[m]
-    } for 5 Proposer, 5 Receiver is sat
+    allPreferencesSanity: {
+        wellformed
+        all px: Proposer, rx: Receiver {
+            #{px.px_pref} > 3
+            #{rx.rx_pref} > 3
+            (px.px_pref).Int = Receiver
+            (rx.rx_pref).Int = Proposer
+        }
+    } for 1 Matching, 5 Proposer, 5 Receiver is sat
+    // if everyone has a preference for everyone, we're certainly stable_rationality
+    allPreferences: {
+        all m: Matching {
+            {
+                wellformed
+                all px: Proposer, rx: Receiver {
+                    (px.px_pref).Int = Receiver
+                    (rx.rx_pref).Int = Proposer
+                }
+            } => stable_rationality[m]
+        }
+    } for 1 Matching, 5 Proposer, 5 Receiver is theorem
 }
 
 pred stable[m: Matching] {
@@ -125,23 +136,45 @@ pred stable[m: Matching] {
     stable_rationality[m]
 }
 
+test expect {
+    stableSat: {
+        some m: Matching | some m.matching and stable[m]
+    } for 5 Proposer, 5 Receiver is sat
+    stableNotSat: {
+        some m: Matching | some m.matching and not stable[m]
+    } for 5 Proposer, 5 Receiver is sat
+
+    stableNoPrefs: {
+        all m: Matching {
+            (all px: Proposer, rx: Receiver {
+                wellformed
+                no px.px_pref
+                no rx.rx_pref
+                no m.matching
+            }) => stable[m]
+        } 
+    } for 5 Proposer, 5 Receiver is theorem
+
+}
+
+
 pred init_state{
     //there is no matching
 
 
-    
+
 }
 
 pred matching_step {
     --guard
     -- first state, they all propose to their most prefered person
     -- keep track of the matches
-    --keep track 
+    --keep track
     --action
     --
 
     //seqFirst[proposer.pref] -- this is the most prefered receiver
-    
+
 }
 
 
@@ -158,7 +191,7 @@ pred final_state{
     stable
     --action
     --no matching
-    
+
 }
 
 
