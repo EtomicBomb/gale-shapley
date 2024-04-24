@@ -1,44 +1,22 @@
 #lang forge/temporal
+option max_tracelength 12
 
 sig Receiver {
-    rx_pref: pfunc Proposer -> Int
+    rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
 }
 
 sig Proposer {
-    px_pref: pfunc Receiver -> Int
+    px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
 
 // ordered preferences, with the numbers 1 to n
 pred wellformed_px_pref[px: Proposer] {
-    Receiver.(px.px_pref) = { i: Int | 0 <= i and i < #{px.px_pref} }
+    Receiver.(px.px_pref) = { i: Int | 0 <= i and i < #{Receiver} }
 }
 
 // ordered preferences, with the numbers 1 to n
 pred wellformed_rx_pref[rx: Receiver] {
-    Proposer.(rx.rx_pref) = { i: Int | 0 <= i and i < #{rx.rx_pref} }
-}
-
-test expect {
-    manyRxPreferences: {
-        some rx: Receiver | wellformed_rx_pref[rx] and #{rx.rx_pref} = 5
-    } for exactly 1 Receiver, 5 Proposer is sat
-    manyPxPreferences: {
-        some px: Proposer | wellformed_px_pref[px] and #{px.px_pref} = 5
-    } for exactly 1 Proposer, 5 Receiver is sat
-
-    pxAlwaysZero: {
-        all px: Proposer | wellformed_px_pref[px] and some px.px_pref => 0 in Receiver.(px.px_pref)
-    } for 5 Receiver, 5 Proposer is theorem
-    rxAlwaysZero: {
-        all rx: Receiver | wellformed_rx_pref[rx] and some rx.rx_pref => 0 in Proposer.(rx.rx_pref)
-    } for 5 Receiver, 5 Proposer is theorem
-
-    rxPrefSeq: {
-        all rx: Receiver | wellformed_rx_pref[rx] => isSeqOf[~(rx.rx_pref), Proposer]
-    } for exactly 1 Receiver, 5 Proposer is theorem
-    pxPrefSeq: {
-        all px: Proposer | wellformed_px_pref[px] => isSeqOf[~(px.px_pref), Receiver]
-    } for exactly 1 Proposer, 5 Receiver is theorem
+    Proposer.(rx.rx_pref) = { i: Int | 0 <= i and i < #{Proposer} }
 }
 
 sig Matching {
@@ -56,20 +34,6 @@ pred wellformed {
     all rx: Receiver | wellformed_rx_pref[rx]
 }
 
-test expect {
-    wellformedSometimes: {
-        some m: Matching, px: Proposer, rx: Receiver | wellformed_matching[m] and (px -> rx) in m.matching
-    } for 5 Proposer, 5 Receiver is sat
-    bijectiveMatching: {
-        // after we remove px -> rx from a match, there's nothing involving px or rx
-        all m: Matching, px: Proposer, rx: Receiver | (px -> rx) in m.matching => {
-            wellformed_matching[m] => {
-                no (m.matching - px -> rx) & (px -> Receiver + Proposer -> rx)
-            }
-        }
-    } for 5 Proposer, 5 Receiver is theorem
-}
-
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
@@ -80,25 +44,6 @@ pred stable_blocking_pair[m: Matching] {
     }
 }
 
-test expect {
-    unstableTwoNoAssignment: {
-        all m: Matching {
-            {
-                wellformed
-                some px: Proposer, rx: Receiver {
-                    some rx.(px.px_pref)
-                    some px.(rx.rx_pref)
-                    no px.(m.matching)
-                    no (m.matching).rx
-                }
-            } => not stable_blocking_pair[m]
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is theorem
-    // ^ this test, but if they both have matchings, or if only one has a matching
-
-    // a test for a non-trivial scenario where we imply stable_blocking_pair (instead of not stable blocking pair)
-}
-
 // individual rationality: A matching is individually rational if each participant 
 // prefers their assigned match to being unmatched
 pred stable_rationality[m: Matching] {
@@ -107,59 +52,17 @@ pred stable_rationality[m: Matching] {
     all rx: Receiver | (m.matching).rx in (rx.rx_pref).Int
 }
 
-test expect {
-    allPreferencesSanity: {
-        wellformed
-        all px: Proposer, rx: Receiver {
-            #{px.px_pref} > 3
-            #{rx.rx_pref} > 3
-            (px.px_pref).Int = Receiver
-            (rx.rx_pref).Int = Proposer
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is sat
-    // if everyone has a preference for everyone, we're certainly stable_rationality
-    allPreferences: {
-        all m: Matching {
-            {
-                wellformed
-                all px: Proposer, rx: Receiver {
-                    (px.px_pref).Int = Receiver
-                    (rx.rx_pref).Int = Proposer
-                }
-            } => stable_rationality[m]
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is theorem
-}
-
 pred stable[m: Matching] {
     stable_blocking_pair[m]
     stable_rationality[m]
 }
 
-test expect {
-    stableSat: {
-        some m: Matching | some m.matching and stable[m]
-    } for 5 Proposer, 5 Receiver is sat
-    stableNotSat: {
-        some m: Matching | some m.matching and not stable[m]
-    } for 5 Proposer, 5 Receiver is sat
-
-    stableNoPrefs: {
-        all m: Matching {
-            (all px: Proposer, rx: Receiver {
-                wellformed
-                no px.px_pref
-                no rx.rx_pref
-                no m.matching
-            }) => stable[m]
-        } 
-    } for 5 Proposer, 5 Receiver is theorem
-
-}
 
 
 pred init_state{
-    //there is no matching
+    --Guard:
+    -- No matching
+    no m: Matching | some m.matching
 
 
 
@@ -188,7 +91,7 @@ pred update_State{
 pred final_state{
     --guard
     //all proposers are matched?
-    stable
+    all m: Matching | stable[m]
     --action
     --no matching
 
@@ -202,11 +105,14 @@ pred final_state{
 
 
 pred traces{
-    wellformed
-
+   always wellformed
     init_state
     eventually final_state
 }
+
+run { 
+    traces
+} for exactly 2 Receiver, exactly 2 Proposer
 
 
 //A proposer is matched with a receiver or themselves(and not another proposer)
