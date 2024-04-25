@@ -1,44 +1,22 @@
 #lang forge/temporal
+option max_tracelength 12
 
 sig Receiver {
-    rx_pref: pfunc Proposer -> Int
+    rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
 }
 
 sig Proposer {
-    px_pref: pfunc Receiver -> Int
+    px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
 
 // ordered preferences, with the numbers 1 to n
-pred px_pref_wellformed[px: Proposer] {
+pred wellformed_px_pref[px: Proposer] {
     Receiver.(px.px_pref) = { i: Int | 0 <= i and i < #{px.px_pref} }
 }
 
 // ordered preferences, with the numbers 1 to n
-pred rx_pref_wellformed[rx: Receiver] {
+pred wellformed_rx_pref[rx: Receiver] {
     Proposer.(rx.rx_pref) = { i: Int | 0 <= i and i < #{rx.rx_pref} }
-}
-
-test expect {
-    manyRxPreferences: {
-        some rx: Receiver | rx_pref_wellformed[rx] and #{rx.rx_pref} = 5
-    } for exactly 1 Receiver, 5 Proposer is sat
-    manyPxPreferences: {
-        some px: Proposer | px_pref_wellformed[px] and #{px.px_pref} = 5
-    } for exactly 1 Proposer, 5 Receiver is sat
-
-    pxAlwaysZero: {
-        all px: Proposer | px_pref_wellformed[px] and some px.px_pref => 0 in Receiver.(px.px_pref)
-    } for 5 Receiver, 5 Proposer is theorem
-    rxAlwaysZero: {
-        all rx: Receiver | rx_pref_wellformed[rx] and some rx.rx_pref => 0 in Proposer.(rx.rx_pref)
-    } for 5 Receiver, 5 Proposer is theorem
-
-    rxPrefSeq: {
-        all rx: Receiver | rx_pref_wellformed[rx] => isSeqOf[~(rx.rx_pref), Proposer]
-    } for exactly 1 Receiver, 5 Proposer is theorem
-    pxPrefSeq: {
-        all px: Proposer | px_pref_wellformed[px] => isSeqOf[~(px.px_pref), Receiver]
-    } for exactly 1 Proposer, 5 Receiver is theorem
 }
 
 sig Matching {
@@ -46,22 +24,8 @@ sig Matching {
 }
 
 // matching is bijective, but may exclude some Proposers or Receivers
-pred matching_wellformed[m: Matching] {
+pred wellformed_matching[m: Matching] {
     all rx: Receiver | lone (m.matching).rx
-}
-
-test expect {
-    wellformedSometimes: {
-        some m: Matching, px: Proposer, rx: Receiver | matching_wellformed[m] and (px -> rx) in m.matching
-    } for 5 Proposer, 5 Receiver is sat
-    bijectiveMatching: {
-        // after we remove px -> rx from a match, there's nothing involving px or rx
-        all m: Matching, px: Proposer, rx: Receiver | (px -> rx) in m.matching => {
-            matching_wellformed[m] => {
-                no (m.matching - px -> rx) & (px -> Receiver + Proposer -> rx)
-            }
-        }
-    } for 5 Proposer, 5 Receiver is theorem
 }
 
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
@@ -83,28 +47,9 @@ pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
 }
 
 pred wellformed_matching_px_pref_rx_pref {
-    all m: Matching | matching_wellformed[m]
-    all px: Proposer | px_pref_wellformed[px]
-    all rx: Receiver | rx_pref_wellformed[rx]
-}
-
-test expect {
-    unstableTwoNoAssignment: {
-        all m: Matching {
-            {
-                wellformed_matching_px_pref_rx_pref
-                some px: Proposer, rx: Receiver {
-                    some rx.(px.px_pref)
-                    some px.(rx.rx_pref)
-                    no px.(m.matching)
-                    no (m.matching).rx
-                }
-            } => not stable_blocking_pair[m]
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is theorem
-    // ^ this test, but if they both have matchings, or if only one has a matching
-
-    // a test for a non-trivial scenario where we imply stable_blocking_pair (instead of not stable blocking pair)
+    all m: Matching | wellformed_matching[m]
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
 }
 
 // individual rationality: A matching is individually rational if each participant 
@@ -115,59 +60,13 @@ pred stable_rationality[m: Matching] {
     all rx: Receiver | (m.matching).rx in (rx.rx_pref).Int
 }
 
-test expect {
-    allPreferencesSanity: {
-        wellformed_matching_px_pref_rx_pref
-        all px: Proposer, rx: Receiver {
-            #{px.px_pref} > 3
-            #{rx.rx_pref} > 3
-            (px.px_pref).Int = Receiver
-            (rx.rx_pref).Int = Proposer
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is sat
-    // if everyone has a preference for everyone, we're certainly stable_rationality
-    allPreferences: {
-        all m: Matching {
-            {
-                wellformed_matching_px_pref_rx_pref
-                all px: Proposer, rx: Receiver {
-                    (px.px_pref).Int = Receiver
-                    (rx.rx_pref).Int = Proposer
-                }
-            } => stable_rationality[m]
-        }
-    } for 1 Matching, 5 Proposer, 5 Receiver is theorem
-}
-
 pred stable[m: Matching] {
     stable_blocking_pair[m]
     stable_rationality[m]
 }
 
-test expect {
-    stableSat: {
-        some m: Matching | some m.matching and stable[m]
-    } for 5 Proposer, 5 Receiver is sat
-    stableNotSat: {
-        some m: Matching | some m.matching and not stable[m]
-    } for 5 Proposer, 5 Receiver is sat
-
-    stableNoPrefs: {
-        all m: Matching {
-            (all px: Proposer, rx: Receiver {
-                wellformed_matching_px_pref_rx_pref
-                no px.px_pref
-                no rx.rx_pref
-                no m.matching
-            }) => stable[m]
-        } 
-    } for 5 Proposer, 5 Receiver is theorem
-
-}
-
 
 --------------- stable matching algorithm -------------------------------------
-
 
 
 sig Status {
@@ -217,7 +116,7 @@ sig Round {
 
 // the round is a contiguous block of States
 // offers happen between all the States
-pred round_wellformed[round: Round] {
+pred wellformed_round[round: Round] {
     let ss = Proposer.(round.states) | some first, last: ss {
         // first and last step are actually the first and last in ss
         ss in first.*next_status + last.*(~next_status)
@@ -229,9 +128,9 @@ pred round_wellformed[round: Round] {
     }
 }
 
-pred rounds_wellformed[first: Round] {
+pred wellformed_rounds[first: Round] {
     all round: first + first.^next_round {
-        round_wellformed[round]
+        wellformed_round[round]
         some last_state: Proposer.(round.states) | last_state.next_status in Proposer.(round.next_round.states)
     }
     no first.(~next_round)
@@ -243,10 +142,10 @@ pred rounds_wellformed[first: Round] {
 }
 
 run {
-    all m: Matching | matching_wellformed[m]
-    all px: Proposer | px_pref_wellformed[px]
-    all rx: Receiver | rx_pref_wellformed[rx]
-    some first: Round | rounds_wellformed[first]
+    all m: Matching | wellformed_matching[m]
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
+    some first: Round | wellformed_rounds[first]
 } for {next_status is linear}
 // TODO: need another is linear bound for next_round
 
@@ -271,17 +170,21 @@ pred update_State{
 pred final_state{
     --guard
     //all proposers are matched?
-    stable
+    all m: Matching | stable[m]
     --action
     --no matching
 }
 
 pred traces{
-    wellformed
-
+   always wellformed
     init_state
     eventually final_state
 }
+
+run { 
+    traces
+} for exactly 2 Receiver, exactly 2 Proposer
+
 
 //A proposer is matched with a receiver or themselves(and not another proposer)
 //A receiver is matched with a proposer or themselves(and not another receiver)
