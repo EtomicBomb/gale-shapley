@@ -28,24 +28,28 @@ pred wellformed_matching[m: Matching] {
     all rx: Receiver | lone (m.matching).rx
 }
 
-pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = px.(m.matching) | some mx 
-        => rx.(px.px_pref) > mx.(px.px_pref) 
-        else some rx.(px.px_pref)
-}
-
-pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = (m.matching).rx | some mx 
-        => px.(rx.rx_pref) > mx.(rx.rx_pref) 
-        else some px.(rx.rx_pref)
-}
-
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
         px_accepts[m, px, rx]
         rx_accepts[m, px, rx]
     }
+}
+
+pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
+    let mx = px.(m.matching) | 
+        some mx => rx.(px.px_pref) < mx.(px.px_pref) else some rx.(px.px_pref)
+}
+
+pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
+    let mx = (m.matching).rx |
+        some mx => px.(rx.rx_pref) < mx.(rx.rx_pref) else some px.(rx.rx_pref)
+}
+
+pred wellformed_matching_px_pref_rx_pref {
+    all m: Matching | wellformed_matching[m]
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
 }
 
 // individual rationality: A matching is individually rational if each participant 
