@@ -28,28 +28,24 @@ pred wellformed_matching[m: Matching] {
     all rx: Receiver | lone (m.matching).rx
 }
 
+pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
+    let mx = px.(m.matching) | some mx 
+        => rx.(px.px_pref) > mx.(px.px_pref) 
+        else some rx.(px.px_pref)
+}
+
+pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
+    let mx = (m.matching).rx | some mx 
+        => px.(rx.rx_pref) > mx.(rx.rx_pref) 
+        else some px.(rx.rx_pref)
+}
+
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
         px_accepts[m, px, rx]
         rx_accepts[m, px, rx]
     }
-}
-
-pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = px.(m.matching) | 
-        some mx => rx.(px.px_pref) > mx.(px.px_pref) else some rx.(px.px_pref)
-}
-
-pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = (m.matching).rx |
-        some mx => px.(rx.rx_pref) > mx.(rx.rx_pref) else some px.(rx.rx_pref)
-}
-
-pred wellformed_matching_px_pref_rx_pref {
-    all m: Matching | wellformed_matching[m]
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
 }
 
 // individual rationality: A matching is individually rational if each participant 
@@ -65,35 +61,41 @@ pred stable[m: Matching] {
     stable_rationality[m]
 }
 
+pred wellformed_matching_px_pref_rx_pref {
+    all m: Matching | wellformed_matching[m]
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
+}
+
 
 --------------- stable matching algorithm -------------------------------------
 
 
-sig Status {
+sig State {
     offer: pfunc Proposer -> Receiver,
     partial_matching: one Matching,
-    next_status: lone Status
+    next: lone State
 }
 
-pred initial_state[s: Status] {
+pred initial_state[s: State] {
     all px: Proposer | px.(s.offer) = (px.px_pref).0    
     no s.partial_matching.matching
 }
 
-pred terminal_state[s: Status] {
+pred terminal_state[s: State] {
     no s.offer
 }
 
 // advance. If px runs out of preferences, we leave px with no next rx
-pred advance_offer[s: Status, px: Proposer, rx: Receiver] {
+pred advance_offer[s: State, px: Proposer, rx: Receiver] {
     let next_rx = (px.px_pref).(rx.(px.px_pref) + 1) |
-        s.next_status.offer = s.offer - (px -> Receiver) - (Proposer -> rx) + (px -> next_rx)
+        s.next.offer = s.offer - (px -> Receiver) - (Proposer -> rx) + (px -> next_rx)
 }
 
 // px was able to make a proposal that was either accepted or rejected
-pred offer_success[s: Status, px: Proposer] {
+pred offer_success[s: State, px: Proposer] {
     some rx: px.(s.offer) {
-        s.next_status.partial_matching.matching = (rx_accepts[s.partial_matching, px, rx] => {
+        s.next.partial_matching.matching = (rx_accepts[s.partial_matching, px, rx] => {
             s.partial_matching.matching - (px -> Receiver) - (Proposer -> rx) + (px -> rx)
         } else {
             s.partial_matching.matching
@@ -103,27 +105,22 @@ pred offer_success[s: Status, px: Proposer] {
 }
 
 // px has no offers left, so we have a dummy round
-pred offer_failed[s: Status, px: Proposer] {
+pred offer_failed[s: State, px: Proposer] {
     no px.(s.offer)
-    s.next_status.offer = s.offer
-    s.next_status.partial_matching = s.partial_matching
+    s.next.offer = s.offer
+    s.next.partial_matching = s.partial_matching
 }
 
 sig Round {
     next_round: lone Round,
-    states: func Proposer -> Status
+    states: func Proposer -> State
 }
 
 // the round is a contiguous block of States
 // offers happen between all the States
 pred wellformed_round[round: Round] {
-    let ss = Proposer.(round.states) | some first, last: ss {
-        // first and last step are actually the first and last in ss
-        ss in first.*next_status + last.*(~next_status)
-        // nothing else is between the first and last steps
-        ss = first.*next_status & last.*(~next_status)
-    }
-    all px: (round.states).Status | let s = px.(round.states) {
+    let ss = Proposer.(round.states) | ss = ss.*next & ss.*(~next)
+    all px: (round.states).State | let s = px.(round.states) {
         offer_success[s, px] or offer_failed[s, px]
     }
 }
@@ -131,7 +128,7 @@ pred wellformed_round[round: Round] {
 pred wellformed_rounds[first: Round] {
     all round: first + first.^next_round {
         wellformed_round[round]
-        some last_state: Proposer.(round.states) | last_state.next_status in Proposer.(round.next_round.states)
+        some last_state: Proposer.(round.states) | last_state.next in Proposer.(round.next_round.states)
     }
     no first.(~next_round)
     some first_state: Proposer.(first.states) | initial_state[first_state]
@@ -146,7 +143,7 @@ run {
     all px: Proposer | wellformed_px_pref[px]
     all rx: Receiver | wellformed_rx_pref[rx]
     some first: Round | wellformed_rounds[first]
-} for {next_status is linear}
+} for {next is linear}
 // TODO: need another is linear bound for next_round
 
 --------------- end stable matching algorithm -------------------------------------
