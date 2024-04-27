@@ -38,12 +38,12 @@ pred stable_blocking_pair[m: Matching] {
 
 pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
     let mx = px.(m.matching) | 
-        some mx => rx.(px.px_pref) > mx.(px.px_pref) else some rx.(px.px_pref)
+        some mx => rx.(px.px_pref) < mx.(px.px_pref) else some rx.(px.px_pref)
 }
 
 pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
     let mx = (m.matching).rx |
-        some mx => px.(rx.rx_pref) > mx.(rx.rx_pref) else some px.(rx.rx_pref)
+        some mx => px.(rx.rx_pref) < mx.(rx.rx_pref) else some px.(rx.rx_pref)
 }
 
 pred wellformed_matching_px_pref_rx_pref {
