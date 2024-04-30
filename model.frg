@@ -93,6 +93,7 @@ pred matching_step {
                         let best_px = rx.rx_pref.best_px_index | 
                             Status.partial_matching.rx' = best_px
 
+    -- yes, we're using the partial matching on the next state
     all matched_px: Status.partial_matching.Receiver' | 
         Status.offer'[matched_px] = Status.offer[matched_px]
 
@@ -105,7 +106,8 @@ pred matching_step {
 }
 
 pred terminal_status {
-     #Status.offer = 0
+    Status.offer.Receiver in Status.partial_matching.Receiver
+    --#Status.offer = 0
 }
 
 run {
