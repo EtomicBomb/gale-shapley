@@ -34,7 +34,8 @@ pred wellformed_matching_px_pref_rx_pref {
     all rx: Receiver | wellformed_rx_pref[rx]
 }
 
-// absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
+// absence of a blocking pair: A matching is stable if there is no pair of 
+// participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
         px_accepts[m, px, rx]
@@ -72,7 +73,7 @@ one sig Status {
     var partial_matching: pfunc Proposer -> Receiver
 }
 
-pred well_formed_preferences{
+pred well_formed_preferences {
     all px: Proposer | wellformed_px_pref[px]
     all rx: Receiver | wellformed_rx_pref[rx]
 }
@@ -83,16 +84,12 @@ pred initial_status {
 }
 
 pred matching_step {
-     all rx: Proposer.(Status.offer)| {
+     all rx: Proposer.(Status.offer) {
         // the most preferred px among the ones that made an offer to rx and their current match
         let currentmatch = Status.partial_matching.rx | let best_px = rx.rx_pref.(min[Status.offer.rx.(rx.rx_pref) + currentmatch]) | {
-            some currentmatch =>{
-                Status.partial_matching' = Status.partial_matching - (currentmatch -> rx) + (best_px -> rx)
-            }else{
-                Status.partial_matching' = Status.partial_matching + (best_px -> rx)
-            }
-            //for the rejected proposers, update the offer to the next best receiver
-            all px : Status.offer.rx - best_px | Status.offer'[px] = (px.px_pref).(add[(rx.(px.px_pref)), 1])
+            Status.partial_matching' = Status.partial_matching - (currentmatch -> rx) + (best_px -> rx)
+            // for the rejected proposers, update the offer to the next best receiver
+            all px: Status.offer.rx - best_px | Status.offer'[px] = (px.px_pref).(add[(rx.(px.px_pref)), 1])
         }
     }
 }
