@@ -19,42 +19,43 @@ test suite for matching_step {
             }
         } is sat
     
---        someValidMatching2: {
---            some p1,p2,p3: Proposer, r1,r2,r3: Receiver|{
---                //each proposer preferences
---                p1.px_pref = (r2 -> 0 + r1 -> 1 + r3 -> 2)
---                p2.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
---                p3.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
---                //each receiver preferences
---                r1.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
---                r2.rx_pref = (p3 -> 0 + p2 -> 1 + p1 -> 2)
---                r3.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
---
---                always matching_step
---                
---                offer = `Status0 -> (p1 -> r2 + p2 -> r1 + p3 -> r1)
---                
---                partial_matching' = `Status0 -> (p1 -> r2 +  p3 -> r1)
---                //r1 rejects p2 who has to propose to r2(their next top choice) in the next step
---                offer' = `Status0 -> (p2 -> r2)
---                //r2 accepts p2 and rejects their current match p1
---                partial_matching'' = `Status0 -> (p2 -> r2 + p3 -> r1)
---                //p1 has to propose to r1(their next top choice) in the next step
---                offer'' = `Status0 -> (p1 -> r1)
---                //r1 accepts p1 and rejects their current match p3
---                partial_matching''' = `Status0 -> (p1 -> r1 + p2 -> r2)
---                //p3 has to propose to r2(their next top choice) in the next step
---                offer''' = `Status0 -> (p3 -> r2)
---                //r2 accepts p3 and rejects their current match p2
---                partial_matching'''' = `Status0 -> (p1 -> r1 + p3 -> r2)
---                //p2 has to propose to r3(their next top choice) in the next step
---                offer'''' = `Status0 -> (p2 -> r3)
---                //r3 matches with p2 since they have no other matches
---                partial_matching''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
---                //no rejections
---                // offer''''' = `Status0 -> ()
---            }
---        } is sat
+        someValidMatching2: {
+            some p1,p2,p3: Proposer, r1,r2,r3: Receiver|{
+                //each proposer preferences
+                p1.px_pref = (r2 -> 0 + r1 -> 1 + r3 -> 2)
+                p2.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
+                p3.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
+                //each receiver preferences
+                r1.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
+                r2.rx_pref = (p3 -> 0 + p2 -> 1 + p1 -> 2)
+                r3.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
+
+                always matching_step
+                
+                no partial_matching
+                offer = `Status0 -> (p1 -> r2 + p2 -> r1 + p3 -> r1)
+
+                partial_matching' = `Status0 -> (p1 -> r2 +  p3 -> r1)
+                //r1 rejects p2 who has to propose to r2(their next top choice) in the next step
+                offer' = `Status0 -> (p2 -> r2)
+                //r2 accepts p2 and rejects their current match p1
+                partial_matching'' = `Status0 -> (p2 -> r2 + p3 -> r1)
+                //p1 has to propose to r1(their next top choice) in the next step
+                offer'' = `Status0 -> (p1 -> r1)
+                //r1 accepts p1 and rejects their current match p3
+                partial_matching''' = `Status0 -> (p1 -> r1 + p2 -> r2)
+                //p3 has to propose to r2(their next top choice) in the next step
+                offer''' = `Status0 -> (p3 -> r2)
+                //r2 accepts p3 and rejects their current match p2
+                partial_matching'''' = `Status0 -> (p1 -> r1 + p3 -> r2)
+                //p2 has to propose to r3(their next top choice) in the next step
+                offer'''' = `Status0 -> (p2 -> r3)
+                //r3 matches with p2 since they have no other matches
+                partial_matching''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
+                //no rejections
+                // offer''''' = `Status0 -> ()
+            }
+        } is sat
 
         canGetTrace: {
             initial_status
@@ -67,12 +68,22 @@ test suite for matching_step {
         } for exactly 3 Proposer, exactly 3 Receiver is sat
 
         -- I don't say eventually terminal_status here because I don't want to artificially narrow the space for unsat
-        pxMatchesWithoutProposing: {
+        pxMatchesWithoutPreference: {
             initial_status
             well_formed_preferences
             always matching_step
             some px: Proposer, rx: Receiver {
                 no px.px_pref[rx] 
+                eventually Status.partial_matching[px] = rx
+            }
+        } is unsat
+
+        rxMatchesWithoutPreference: {
+            initial_status
+            well_formed_preferences
+            always matching_step
+            some px: Proposer, rx: Receiver {
+                no rx.rx_pref[px] 
                 eventually Status.partial_matching[px] = rx
             }
         } is unsat

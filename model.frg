@@ -89,25 +89,32 @@ pred matching_step {
             -- px doesn't offer if it already has a match
             let offer_pxs = Status.offer.rx - Status.partial_matching.Receiver |
                 let px_indices = rx.rx_pref[current_px + offer_pxs] |
-                    let best_px_index = min[px_indices] |
-                        let best_px = rx.rx_pref.best_px_index | 
-                            Status.partial_matching.rx' = best_px
+                    no px_indices => { 
+                        no Status.partial_matching.rx' 
+                    } else {
+                        let best_px_index = min[px_indices] |
+                            let best_px = rx.rx_pref.best_px_index |
+                                Status.partial_matching.rx' = best_px
+                    }
 
-    -- yes, we're using the partial matching on the next state
+    -- yes, we're using the partial matching from the next state, because it contains everyone who was just matched
     all matched_px: Status.partial_matching.Receiver' | 
         Status.offer'[matched_px] = Status.offer[matched_px]
 
     all unmatched_px: Proposer - Status.partial_matching.Receiver' |
         let current_offer_rx = Status.offer[unmatched_px] |
             let current_offer_rx_index = unmatched_px.px_pref[current_offer_rx] |
-                let next_offer_rx_index = add[current_offer_rx_index, 1] |
-                    let next_offer_rx = unmatched_px.px_pref.next_offer_rx_index |
-                        Status.offer'[unmatched_px] = next_offer_rx
+                no current_offer_rx_index => { 
+                    no Status.offer'[unmatched_px] 
+                } else {
+                    let next_offer_rx_index = add[current_offer_rx_index, 1] |
+                        let next_offer_rx = unmatched_px.px_pref.next_offer_rx_index |
+                            Status.offer'[unmatched_px] = next_offer_rx
+                }
 }
 
 pred terminal_status {
-    Status.offer.Receiver in Status.partial_matching.Receiver
-    --#Status.offer = 0
+    #Status.offer = 0
 }
 
 run {
