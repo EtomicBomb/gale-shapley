@@ -1,5 +1,5 @@
 #lang forge/temporal
-option max_tracelength 12
+option max_tracelength 50
 
 sig Receiver {
     rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
@@ -28,6 +28,12 @@ pred wellformed_matching[m: Matching] {
     all rx: Receiver | lone (m.matching).rx
 }
 
+pred wellformed_matching_px_pref_rx_pref {
+    all m: Matching | wellformed_matching[m]
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
+}
+
 // absence of a blocking pair: A matching is stable if there is no pair of participants who prefer each other to their assigned match
 pred stable_blocking_pair[m: Matching] {
     no px: Proposer, rx: Receiver | {
@@ -46,12 +52,6 @@ pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
         some mx => px.(rx.rx_pref) < mx.(rx.rx_pref) else some px.(rx.rx_pref)
 }
 
-pred wellformed_matching_px_pref_rx_pref {
-    all m: Matching | wellformed_matching[m]
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
-}
-
 // individual rationality: A matching is individually rational if each participant 
 // prefers their assigned match to being unmatched
 pred stable_rationality[m: Matching] {
@@ -65,137 +65,59 @@ pred stable[m: Matching] {
     stable_rationality[m]
 }
 
-pred wellformed_matching_px_pref_rx_pref {
-    all m: Matching | wellformed_matching[m]
+--------------- stable matching algorithm -------------------------------------
+
+one sig Status {
+    var offer: pfunc Proposer -> Receiver,
+    var partial_matching: pfunc Proposer -> Receiver
+}
+
+pred well_formed_preferences{
     all px: Proposer | wellformed_px_pref[px]
     all rx: Receiver | wellformed_rx_pref[rx]
 }
 
-
---------------- stable matching algorithm -------------------------------------
-
-
-sig State {
-    offer: pfunc Proposer -> Receiver,
-    partial_matching: one Matching,
-    next: lone State
+pred initial_status {
+    all px: Proposer | px.(Status.offer) = (px.px_pref).0    
+    no Status.partial_matching
 }
 
-pred initial_state[s: State] {
-    all px: Proposer | px.(s.offer) = (px.px_pref).0    
-    no s.partial_matching.matching
-}
-
-pred terminal_state[s: State] {
-    no s.offer
-}
-
-// advance. If px runs out of preferences, we leave px with no next rx
-pred advance_offer[s: State, px: Proposer, rx: Receiver] {
-    let next_rx = (px.px_pref).(rx.(px.px_pref) + 1) |
-        s.next.offer = s.offer - (px -> Receiver) - (Proposer -> rx) + (px -> next_rx)
-}
-
-// px was able to make a proposal that was either accepted or rejected
-pred offer_success[s: State, px: Proposer] {
-    some rx: px.(s.offer) {
-        s.next.partial_matching.matching = (rx_accepts[s.partial_matching, px, rx] => {
-            s.partial_matching.matching - (px -> Receiver) - (Proposer -> rx) + (px -> rx)
-        } else {
-            s.partial_matching.matching
-        })
-        advance_offer[s, px, rx]
+pred matching_step {
+     all rx: Proposer.(Status.offer)| {
+        // the most preferred px among the ones that made an offer to rx and their current match
+        let currentmatch = Status.partial_matching.rx | let best_px = rx.rx_pref.(min[Status.offer.rx.(rx.rx_pref) + currentmatch]) | {
+            some currentmatch =>{
+                Status.partial_matching' = Status.partial_matching - (currentmatch -> rx) + (best_px -> rx)
+            }else{
+                Status.partial_matching' = Status.partial_matching + (best_px -> rx)
+            }
+            //for the rejected proposers, update the offer to the next best receiver
+            all px : Status.offer.rx - best_px | Status.offer'[px] = (px.px_pref).(add[(rx.(px.px_pref)), 1])
+        }
     }
 }
 
-// px has no offers left, so we have a dummy round
-pred offer_failed[s: State, px: Proposer] {
-    no px.(s.offer)
-    s.next.offer = s.offer
-    s.next.partial_matching = s.partial_matching
-}
-
-sig Round {
-    next_round: lone Round,
-    states: func Proposer -> State
-}
-
-// the round is a contiguous block of States
-// offers happen between all the States
-pred wellformed_round[round: Round] {
-    let ss = Proposer.(round.states) | ss = ss.*next & ss.*(~next)
-    all px: (round.states).State | let s = px.(round.states) {
-        offer_success[s, px] or offer_failed[s, px]
-    }
-}
-
-pred wellformed_rounds[first: Round] {
-    all round: first + first.^next_round {
-        wellformed_round[round]
-        some last_state: Proposer.(round.states) | last_state.next in Proposer.(round.next_round.states)
-    }
-    no first.(~next_round)
-    some first_state: Proposer.(first.states) | initial_state[first_state]
-    some last_round: first.*next_round {
-        no last_round.next_round
-        some s: Proposer.(last_round.states) | terminal_state[s]
-    }
+pred terminal_status {
+     #Status.offer = 0
 }
 
 run {
-    all m: Matching | wellformed_matching[m]
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
-    some first: Round | wellformed_rounds[first]
-} for {next is linear}
-// TODO: need another is linear bound for next_round
+    initial_status
+
+    always well_formed_preferences
+    always matching_step
+    eventually terminal_status
+  
+    // all px : Proposer | Receiver in (px.px_pref).Int
+    // #Proposer.(Status.offer) = 2
+    // #Proposer.px_pref.0 >1
+    all rx: Receiver | #rx.rx_pref = 3
+    all px: Proposer | #px.px_pref = 3
+  
+    // advance_offer
+} for exactly 5 Receiver, exactly 5 Proposer
 
 --------------- end stable matching algorithm -------------------------------------
-
-/*
-pred matching_step {
-    --guard
-    -- first state, they all propose to their most prefered person
-    -- keep track of the matches
-    --keep track
-    --action
-    --
-
-    //seqFirst[proposer.pref] -- this is the most prefered receiver
-
-}
-
-pred update_State{
-}
-
-pred final_state{
-    --guard
-    //all proposers are matched?
-    all m: Matching | stable[m]
-    --action
-    --no matching
-}
-
-pred traces{
-   always wellformed
-    init_state
-    eventually final_state
-}
-
-run { 
-    traces
-} for exactly 2 Receiver, exactly 2 Proposer
-
-
-//A proposer is matched with a receiver or themselves(and not another proposer)
-//A receiver is matched with a proposer or themselves(and not another receiver)
-
-// pred cant_match_same_type{
-//     all p :proposer| all e: elems[p.pref] | (e in receiver +p)
-
-//     all r: receiver| all e: elems[r.pref] | (e in proposer +r)
-
-// }
 
 //A set of employers with unfilled positions
 //A one-dimensional array indexed by employers, specifying the preference index of the next applicant to whom the employer would send an offer, initially 1 for each employer
@@ -206,6 +128,8 @@ run {
 // https://csci1710.github.io/forge-documentation/forge-standard-library/helpers.html?highlight=sequen#sequence-helpers
 
 //Gale–Shapley algorithm
+
+/**
 
 STEP 1: Step 1
 --Each proposer proposes to his most preferred, acceptable receiver.
