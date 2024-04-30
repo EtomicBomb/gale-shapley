@@ -1,5 +1,5 @@
 #lang forge/temporal
-option max_tracelength 50
+option max_tracelength 20
 
 sig Receiver {
     rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
@@ -74,8 +74,8 @@ pred stable[m: Matching] {
 --------------- stable matching algorithm -------------------------------------
 
 one sig Status {
-    var offer: pfunc Proposer -> Receiver,
-    var partial_matching: pfunc Proposer -> Receiver
+    var offer: set Proposer -> Receiver,
+    var partial_matching: set Proposer -> Receiver
 }
 
 pred initial_status {

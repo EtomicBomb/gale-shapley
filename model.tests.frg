@@ -77,13 +77,27 @@ test suite for matching_step {
             }
         } is unsat
 
-        rankedForMultiple: {
+        multiplePxMatching: {
             initial_status
             well_formed_preferences
             always matching_step
             some px: Proposer | eventually #Status.partial_matching[px] > 1
         } is unsat
+
+        multipleRxMatching: {
+            initial_status
+            well_formed_preferences
+            always matching_step
+            some rx: Receiver | eventually #Status.partial_matching.rx > 1
+        } is unsat
     
+        multiplePxProposing: {
+            initial_status
+            well_formed_preferences
+            always matching_step
+            some px: Proposer | eventually #Status.offer[px] > 1
+        } is unsat
+
         rxMatchesWithoutRanking: {
             initial_status
             well_formed_preferences
