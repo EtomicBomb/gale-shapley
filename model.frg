@@ -19,6 +19,11 @@ pred wellformed_rx_pref[rx: Receiver] {
     Proposer.(rx.rx_pref) = { i: Int | 0 <= i and i < #{rx.rx_pref} }
 }
 
+pred well_formed_preferences {
+    all px: Proposer | wellformed_px_pref[px]
+    all rx: Receiver | wellformed_rx_pref[rx]
+}
+
 sig Matching {
     matching: pfunc Proposer -> Receiver
 }
@@ -73,25 +78,30 @@ one sig Status {
     var partial_matching: pfunc Proposer -> Receiver
 }
 
-pred well_formed_preferences {
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
-}
-
 pred initial_status {
     all px: Proposer | px.(Status.offer) = (px.px_pref).0    
     no Status.partial_matching
 }
 
 pred matching_step {
-     all rx: Proposer.(Status.offer) {
-        // the most preferred px among the ones that made an offer to rx and their current match
-        let currentmatch = Status.partial_matching.rx | let best_px = rx.rx_pref.(min[Status.offer.rx.(rx.rx_pref) + currentmatch]) | {
-            Status.partial_matching' = Status.partial_matching - (currentmatch -> rx) + (best_px -> rx)
-            // for the rejected proposers, update the offer to the next best receiver
-            all px: Status.offer.rx - best_px | Status.offer'[px] = (px.px_pref).(add[(rx.(px.px_pref)), 1])
-        }
-    }
+    all rx: Receiver |
+        let current_px = Status.partial_matching.rx |
+            -- px doesn't offer if it already has a match
+            let offer_pxs = Status.offer.rx - Status.partial_matching.Receiver |
+                let px_indices = rx.rx_pref[current_px + offer_pxs] |
+                    let best_px_index = min[px_indices] |
+                        let best_px = rx.rx_pref.best_px_index | 
+                            Status.partial_matching.rx' = best_px
+
+    all matched_px: Status.partial_matching.Receiver' | 
+        Status.offer'[matched_px] = Status.offer[matched_px]
+
+    all unmatched_px: Proposer - Status.partial_matching.Receiver' |
+        let current_offer_rx = Status.offer[unmatched_px] |
+            let current_offer_rx_index = unmatched_px.px_pref[current_offer_rx] |
+                let next_offer_rx_index = add[current_offer_rx_index, 1] |
+                    let next_offer_rx = unmatched_px.px_pref.next_offer_rx_index |
+                        Status.offer'[unmatched_px] = next_offer_rx
 }
 
 pred terminal_status {
