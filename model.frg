@@ -104,14 +104,13 @@ run {
     always well_formed_preferences
     always matching_step
     eventually terminal_status
+
+    all rx: Receiver | #rx.rx_pref = 3
+    all px: Proposer | #px.px_pref = 3
   
     // all px : Proposer | Receiver in (px.px_pref).Int
     // #Proposer.(Status.offer) = 2
     // #Proposer.px_pref.0 >1
-    all rx: Receiver | #rx.rx_pref = 3
-    all px: Proposer | #px.px_pref = 3
-  
-    // advance_offer
 } for exactly 5 Receiver, exactly 5 Proposer
 
 --------------- end stable matching algorithm -------------------------------------
