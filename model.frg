@@ -78,52 +78,33 @@ pred stable[m: Matching] {
 
 --------------- stable matching algorithm -------------------------------------
 
+fun none_min[ints: set Int]: lone Int {
+    some ints => min[ints] else none
+} 
+
 one sig Status {
     var offer: set Proposer -> Receiver,
     var partial_matching: set Proposer -> Receiver
 }
 
 pred initial_status {
-    all px: Proposer | px.(Status.offer) = (px.px_pref).0    
+    Status.offer = px_pref.0
     no Status.partial_matching
 }
 
-fun better_min[ints: set Int]: lone Int {
-    no ints => none else min[ints]
-} 
-
 pred matching_step {
-    all rx: Receiver |
-        -- px doesn't offer if it already has a match
-        let offer_pxs = Status.offer.rx  |
-            let px_indices = rx.rx_pref[offer_pxs] |
-                no px_indices => { 
-                    no Status.partial_matching'.rx
-                    all rejected: Status.offer.rx {
-                        let rx_index = rejected.px_pref[rx] |
-                            let next_offer_rx_index = add[rx_index, 1] |
-                                let next_offer_rx = rejected.px_pref.next_offer_rx_index |
-                                    Status.offer'[rejected] = next_offer_rx
-                    }
+    Status.offer'.Receiver in Status.offer.Receiver
 
-                } else {
-                    let best_px_index = min[px_indices] |
-                        let best_px = rx.rx_pref.best_px_index | {
-                            Status.partial_matching'.rx = best_px
-                            Status.offer'[best_px] = rx
-                            -- update everyone who was rejected
-                            all rejected: Status.offer.rx - best_px {
-                                let rx_index = rejected.px_pref[rx] |
-                                    let next_offer_rx_index = add[rx_index, 1] |
-                                        let next_offer_rx = rejected.px_pref.next_offer_rx_index |
-                                            Status.offer'[rejected] = next_offer_rx
-                            }
-                        }
-                }
-                    -- rn, only constraining Status.offer'[px] for rejected people
-                    --  a proposer didn't have an offer out -> they exhausted everyone -> still shoudn't have an offer
-                    -- -- they had an offer out and they got it -> they should still have an offer out for their matched rx
-    all unlucky_px: Proposer - Status.offer.Receiver | no Status.offer'[unlucky_px]
+    all rx: Receiver {
+        let best_px = rx.rx_pref.(none_min[rx.rx_pref[Status.offer.rx]]) | {
+            Status.partial_matching'.rx = best_px
+            Status.offer'[best_px] = (some best_px => rx else none)
+            all rejected_px: Status.offer.rx - best_px {
+                Status.offer'[rejected_px] 
+                    = rejected_px.px_pref.(add[1, rejected_px.px_pref[rx]])
+            }
+        }
+    }
 }
 
 pred terminal_status {
