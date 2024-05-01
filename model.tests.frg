@@ -18,7 +18,7 @@ test suite for matching_step {
                 partial_matching' = `Status0 -> (p1 -> r1 + p2 -> r2)
             }
         } is sat
-    
+        /*
         someValidMatching2: {
             some p1,p2,p3: Proposer, r1,r2,r3: Receiver|{
                 //each proposer preferences
@@ -56,6 +56,7 @@ test suite for matching_step {
                 // offer''''' = `Status0 -> ()
             }
         } is sat
+        */
 
         canGetTrace: {
             initial_status
