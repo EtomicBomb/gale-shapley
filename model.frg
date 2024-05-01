@@ -9,6 +9,11 @@ sig Proposer {
     px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
 
+-- TODO: create new sigs ReceiverPreferences and ProposerPreferences, 
+-- which are paramaters for stable*[] predicates
+-- then, we can alter these to see the impact on the resulting matches?
+-- note: pfunc constraint cannot be expressed: illegal syntax: Receiver -> pfunc Proposer -> Int
+
 // ordered preferences, with the numbers 1 to n
 pred wellformed_px_pref[px: Proposer] {
     Receiver.(px.px_pref) = { i: Int | 0 <= i and i < #{px.px_pref} }
@@ -122,6 +127,8 @@ pred matching_step {
 }
 
 pred terminal_status {
+    -- offers == matches
+    
     #Status.offer = 0
 }
 

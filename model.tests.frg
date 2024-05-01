@@ -118,6 +118,8 @@ test suite for matching_step {
                 eventually Status.partial_matching[px] = rx
             }
         } is unsat
+
+        -- matches is a subset of offers
     }
 }
 
