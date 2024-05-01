@@ -61,11 +61,31 @@ test suite for matching_step {
             initial_status
             well_formed_preferences
             always matching_step
-            --eventually terminal_status
+            eventually terminal_status
             -- why can't I find these
             all rx: Receiver | #rx.rx_pref = 3
             all px: Proposer | #px.px_pref = 3
         } for exactly 3 Proposer, exactly 3 Receiver is sat
+
+        offerSuperset: {
+            {
+                initial_status
+                well_formed_preferences
+                always matching_step
+            } implies {
+                always Status.partial_matching in Status.offer
+            }
+        } is theorem
+
+        matchingGrowing: {
+            {
+                initial_status
+                well_formed_preferences
+                always matching_step
+            } implies {
+                always #Status.partial_matching' >= #Status.partial_matching
+            }
+        } is theorem
 
         -- I don't say eventually terminal_status here because I don't want to artificially narrow the space for unsat
         pxMatchesWithoutPreference: {
@@ -118,6 +138,8 @@ test suite for matching_step {
                 eventually Status.partial_matching[px] = rx
             }
         } is unsat
+
+
 
         -- matches is a subset of offers
     }

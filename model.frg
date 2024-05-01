@@ -127,9 +127,7 @@ pred matching_step {
 }
 
 pred terminal_status {
-    -- offers == matches
-    
-    #Status.offer = 0
+    Status.offer = Status.partial_matching
 }
 
 run {
