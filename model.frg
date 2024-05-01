@@ -1,5 +1,5 @@
 #lang forge/temporal
-option max_tracelength 20
+option max_tracelength 10
 
 sig Receiver {
     rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
@@ -83,6 +83,10 @@ pred initial_status {
     no Status.partial_matching
 }
 
+fun better_min[ints: set Int]: lone Int {
+    no ints => none else min[ints]
+} 
+
 pred matching_step {
     all rx: Receiver |
         -- px doesn't offer if it already has a match
@@ -90,6 +94,13 @@ pred matching_step {
             let px_indices = rx.rx_pref[offer_pxs] |
                 no px_indices => { 
                     no Status.partial_matching'.rx
+                    all rejected: Status.offer.rx {
+                        let rx_index = rejected.px_pref[rx] |
+                            let next_offer_rx_index = add[rx_index, 1] |
+                                let next_offer_rx = rejected.px_pref.next_offer_rx_index |
+                                    Status.offer'[rejected] = next_offer_rx
+                    }
+
                 } else {
                     let best_px_index = min[px_indices] |
                         let best_px = rx.rx_pref.best_px_index | {
@@ -107,12 +118,55 @@ pred matching_step {
                     -- rn, only constraining Status.offer'[px] for rejected people
                     --  a proposer didn't have an offer out -> they exhausted everyone -> still shoudn't have an offer
                     -- -- they had an offer out and they got it -> they should still have an offer out for their matched rx
-    all unlucky_px: Proposer - (Status.partial_matching'.Receiver & Status.offer.Receiver) | 
-        no Status.offer'[unlucky_px]
+    all unlucky_px: Proposer - Status.offer.Receiver | no Status.offer'[unlucky_px]
 }
 
 pred terminal_status {
     #Status.offer = 0
+}
+
+run {
+    some p1,p2,p3: Proposer, r1,r2,r3: Receiver|{
+    //each proposer preferences
+    p1.px_pref = (r2 -> 0 + r1 -> 1 + r3 -> 2)
+    p2.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
+    p3.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
+    //each receiver preferences
+    r1.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
+    r2.rx_pref = (p3 -> 0 + p2 -> 1 + p1 -> 2)
+    r3.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
+
+    always matching_step
+    
+    no partial_matching
+    
+    offer = `Status0 -> (p1 -> r2 + p2 -> r1 + p3 -> r1)
+    
+    partial_matching' = `Status0 -> (p1 -> r2 +  p3 -> r1)
+    
+    //r1 rejects p2 who has to propose to r2(their next top choice) in the next step
+    
+    offer' = `Status0 -> (p2 -> r2 + p1 -> r2 +  p3 -> r1)
+    
+    //r2 accepts p2 and rejects their current match p1
+    partial_matching'' = `Status0 -> (p2 -> r2 + p3 -> r1)
+    //p1 has to propose to r1(their next top choice) in the next step
+    
+    offer'' = `Status0 -> (p1 -> r1 + p2 -> r2 + p3 -> r1)
+    
+    //r1 accepts p1 and rejects their current match p3
+    partial_matching''' = `Status0 -> (p1 -> r1 + p2 -> r2)
+    //p3 has to propose to r2(their next top choice) in the next step
+    offer''' = `Status0 -> (p3 -> r2 + p1 -> r1 + p2 -> r2)
+    //r2 accepts p3 and rejects their current match p2
+    partial_matching'''' = `Status0 -> (p1 -> r1 + p3 -> r2)
+    //p2 has to propose to r3(their next top choice) in the next step
+    offer'''' = `Status0 -> (p2 -> r3 + p1 -> r1 + p3 -> r2)
+    //r3 matches with p2 since they have no other matches
+    partial_matching''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
+    //no rejections
+    offer''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
+    }
 }
 
 run {
@@ -128,7 +182,7 @@ run {
     // all px : Proposer | Receiver in (px.px_pref).Int
     // #Proposer.(Status.offer) = 2
     // #Proposer.px_pref.0 >1
-} for exactly 5 Receiver, exactly 5 Proposer
+} for exactly 3 Receiver, exactly 3 Proposer
 
 --------------- end stable matching algorithm -------------------------------------
 
