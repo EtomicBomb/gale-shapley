@@ -85,26 +85,25 @@ pred initial_status {
 
 pred matching_step {
     all rx: Receiver |
-        let current_px = Status.partial_matching.rx |
-            -- px doesn't offer if it already has a match
-            let offer_pxs = Status.offer.rx  |
-                let px_indices = rx.rx_pref[offer_pxs] |
-                    no px_indices => { 
-                        no Status.partial_matching.rx' 
-                    } else {
-                        let best_px_index = min[px_indices] |
-                            let best_px = rx.rx_pref.best_px_index | {
-                                Status.partial_matching.rx' = best_px
-                                Status.offer'[best_px] = rx
-                                -- update everyone who was rejected
-                                all rejected: Status.offer.rx - best_px {
-                                    let rx_index = rejected.px_pref[rx] |
-                                        let next_offer_rx_index = add[rx_index, 1] |
-                                            let next_offer_rx = rejected.px_pref.next_offer_rx_index |
-                                                Status.offer'[rejected] = next_offer_rx
-                                }
+        -- px doesn't offer if it already has a match
+        let offer_pxs = Status.offer.rx  |
+            let px_indices = rx.rx_pref[offer_pxs] |
+                no px_indices => { 
+                    no Status.partial_matching'.rx
+                } else {
+                    let best_px_index = min[px_indices] |
+                        let best_px = rx.rx_pref.best_px_index | {
+                            Status.partial_matching'.rx = best_px
+                            Status.offer'[best_px] = rx
+                            -- update everyone who was rejected
+                            all rejected: Status.offer.rx - best_px {
+                                let rx_index = rejected.px_pref[rx] |
+                                    let next_offer_rx_index = add[rx_index, 1] |
+                                        let next_offer_rx = rejected.px_pref.next_offer_rx_index |
+                                            Status.offer'[rejected] = next_offer_rx
                             }
-                    }
+                        }
+                }
                     -- rn, only constraining Status.offer'[px] for rejected people
                     --  a proposer didn't have an offer out -> they exhausted everyone -> still shoudn't have an offer
                     -- -- they had an offer out and they got it -> they should still have an offer out for their matched rx

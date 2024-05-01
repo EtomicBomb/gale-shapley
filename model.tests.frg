@@ -67,7 +67,7 @@ test suite for matching_step {
             --all rx: Receiver | #rx.rx_pref = 3
             --all px: Proposer | #px.px_pref = 3
         } for exactly 3 Proposer, exactly 3 Receiver is sat
-
+        
         -- I don't say eventually terminal_status here because I don't want to artificially narrow the space for unsat
         pxMatchesWithoutPreference: {
             initial_status
