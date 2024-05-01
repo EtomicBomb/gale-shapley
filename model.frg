@@ -1,5 +1,6 @@
 #lang forge/temporal
 option max_tracelength 10
+option run_sterling "model_vis.js"
 
 sig Receiver {
     rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
