@@ -65,6 +65,49 @@ test suite for matching_step {
                 offer''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
             }
         } is sat
+
+
+
+            someValidMatching_true_preference:{
+            some p1,p2,p3,p4 : Proposer, r1,r2,r3 : Receiver|{
+                p1.px_pref = (r1 -> 0 + r2 -> 1)
+                p2.px_pref = (r1 -> 0 + r3 -> 1)
+                p3.px_pref = (r1-> 0 + r2 -> 1 + r3 -> 2)
+                p4.px_pref = (r3 -> 0 + r1 -> 1 + r2 -> 2)
+
+                r1.rx_pref = (p4 -> 0 + p2 -> 1 + p1 -> 2)
+                r2.rx_pref = (p3 -> 0 + p4 -> 1 + p2 -> 2 + p1 -> 3)
+                r3.rx_pref = (p2 -> 0 + p4 -> 1 + p3 -> 2 + p1 -> 3)
+
+                always matching_step
+                offer = `Status0 -> (p1 -> r1 + p2 -> r1 + p3 -> r1 + p4 -> r3)
+                offer' = `Status0 -> (p1 -> r2 + p3 -> r2 + p2 -> r1 + p4 -> r3 )
+                offer'' = `Status0 -> (p2 -> r1 + p3 -> r2 + p4 -> r3)
+            }
+
+        } is sat
+
+        someValidMatching_false_preference:{
+            some p1,p2,p3,p4 : Proposer, r1,r2,r3 : Receiver|{
+                p1.px_pref = (r1 -> 0 + r2 -> 1)
+                p2.px_pref = (r1 -> 0 + r3 -> 1)
+                p3.px_pref = (r1-> 0 + r2 -> 1 + r3 -> 2)
+                p4.px_pref = (r3 -> 0 + r1 -> 1 + r2 -> 2)
+
+                r1.rx_pref = (p4 -> 0 + p2 -> 1 + p1 -> 2)
+                r2.rx_pref = (p3 -> 0 + p4 -> 1 + p2 -> 2 + p1 -> 3)
+                //r3 presents a false preference. They only represent p1 in their preference list and no other other proposers
+                r3.rx_pref = (p2 -> 0)
+
+                always matching_step
+                offer = `Status0 -> (p1 -> r1 + p2 -> r1 + p3 -> r1 + p4 -> r3)
+                offer' = `Status0 -> (p1 -> r2 + p3 -> r2 + p4 -> r1 + p2 -> r1 )
+                offer'' = `Status0 -> (p2 -> r3 + p4 -> r1 + p3 -> r2)
+                // r3 is able to get matched their most preferred proposer, p2 by lying about their preferences
+                //This shows that receivers can have an incentive to lie about their preferences
+                offer''' = `Status0 -> (p2 -> r3 + p4 -> r1 + p3 -> r2)
+            
+        }} is sat
         
 
         canGetTrace: {
@@ -148,7 +191,7 @@ test suite for matching_step {
             } implies eventually stable[Status.offer]
         } for 0 Matching is theorem
     }
-}
+    }
 
 test suite for wellformed_rx_pref{
     test expect {
