@@ -3,13 +3,15 @@ open "model.frg"
 
 test suite for matching_step {
     test expect {
-        eventuallyStable: {
+        offersShrink: {
             {
                 initial_status
                 well_formed_preferences
                 always matching_step
-            } implies eventually stable[Status.offer]
-        } for 0 Matching is theorem
+            } implies {
+                always #Status.offer' <= #Status.offer
+            }
+        } is theorem
 
         alwaysTerminate: {
             {
@@ -29,7 +31,6 @@ test suite for matching_step {
                 //each proposes to their top choice
                 offer = `Status0 -> (p1 -> r1  + p2 -> r2)
                 //Tried to show that the matching in initial state is empty - but wrong syntax
-                //partial_matching = `Status0 -> ()
                 --partial_matching' = `Status0 -> (p1 -> r1 + p2 -> r2)
             }
         } is sat
@@ -47,25 +48,19 @@ test suite for matching_step {
 
                 always matching_step
                 
-                --no partial_matching
                 offer = `Status0 -> (p1 -> r2 + p2 -> r1 + p3 -> r1)
-                --partial_matching' = `Status0 -> (p1 -> r2 +  p3 -> r1)
                 //r1 rejects p2 who has to propose to r2(their next top choice) in the next step
                 offer' = `Status0 -> (p2 -> r2 + p1 -> r2 +  p3 -> r1)
                 //r2 accepts p2 and rejects their current match p1
-                --partial_matching'' = `Status0 -> (p2 -> r2 + p3 -> r1)
                 //p1 has to propose to r1(their next top choice) in the next step
                 offer'' = `Status0 -> (p1 -> r1 + p2 -> r2 + p3 -> r1)
                 //r1 accepts p1 and rejects their current match p3
-                --partial_matching''' = `Status0 -> (p1 -> r1 + p2 -> r2)
                 //p3 has to propose to r2(their next top choice) in the next step
                 offer''' = `Status0 -> (p3 -> r2 + p1 -> r1 + p2 -> r2)
                 //r2 accepts p3 and rejects their current match p2
-                --partial_matching'''' = `Status0 -> (p1 -> r1 + p3 -> r2)
                 //p2 has to propose to r3(their next top choice) in the next step
                 offer'''' = `Status0 -> (p2 -> r3 + p1 -> r1 + p3 -> r2)
                 //r3 matches with p2 since they have no other matches
-                --partial_matching''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
                 //no rejections
                 offer''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
             }
@@ -80,26 +75,6 @@ test suite for matching_step {
             all rx: Receiver | #rx.rx_pref = 3
             all px: Proposer | #px.px_pref = 3
         } for exactly 3 Proposer, exactly 3 Receiver is sat
-
---        offerSuperset: {
---            {
---                initial_status
---                well_formed_preferences
---                always matching_step
---            } implies {
---                always Status.partial_matching in Status.offer
---            }
---        } is theorem
-
---        matchingGrowing: {
---            {
---                initial_status
---                well_formed_preferences
---                always matching_step
---            } implies {
---                always #Status.partial_matching' >= #Status.partial_matching
---            }
---        } is theorem
 
         -- I don't say eventually terminal_status here because I don't want to artificially narrow the space for unsat
         pxMatchesWithoutPreference: {
@@ -165,11 +140,13 @@ test suite for matching_step {
             }
         } is unsat
 
-
-
-
-
-        -- matches is a subset of offers
+        eventuallyStable: {
+            {
+                initial_status
+                well_formed_preferences
+                always matching_step
+            } implies eventually stable[Status.offer]
+        } for 0 Matching is theorem
     }
 }
 

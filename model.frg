@@ -83,12 +83,10 @@ fun none_min[ints: set Int]: lone Int {
 
 one sig Status {
     var offer: set Proposer -> Receiver
---    var partial_matching: set Proposer -> Receiver
 }
 
 pred initial_status {
     Status.offer = px_pref.0
---    no Status.partial_matching
 }
 
 pred matching_step {
@@ -98,7 +96,6 @@ pred matching_step {
     -- each receiver chooses their favorite offering proposer, and rejects all others 
     all rx: Receiver {
         let best_px = rx.rx_pref.(none_min[rx.rx_pref[Status.offer.rx]]) {
---            Status.partial_matching'.rx = best_px
             Status.offer'[best_px] = (some best_px => rx else none)
             all rejected_px: Status.offer.rx - best_px {
                 Status.offer'[rejected_px]
