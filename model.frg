@@ -9,19 +9,19 @@ sig Proposer {
     px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
 
--- TODO: create new sigs ReceiverPreferences and ProposerPreferences, 
+-- TODO: create new sigs ReceiverPreferences and ProposerPreferences,
 -- which are paramaters for stable*[] predicates
 -- then, we can alter these to see the impact on the resulting matches?
 -- note: pfunc constraint cannot be expressed: illegal syntax: Receiver -> pfunc Proposer -> Int
 
 // ordered preferences, with the numbers 1 to n
 pred wellformed_px_pref[px: Proposer] {
-    Receiver.(px.px_pref) = { i: Int | 0 <= i and i < #{px.px_pref} }
+    px.px_pref[Receiver] = { i: Int | 0 <= i and i < #{px.px_pref} }
 }
 
 // ordered preferences, with the numbers 1 to n
 pred wellformed_rx_pref[rx: Receiver] {
-    Proposer.(rx.rx_pref) = { i: Int | 0 <= i and i < #{rx.rx_pref} }
+    rx.rx_pref[Proposer] = { i: Int | 0 <= i and i < #{rx.rx_pref} }
 }
 
 pred well_formed_preferences {
@@ -35,7 +35,7 @@ sig Matching {
 
 // matching is bijective, but may exclude some Proposers or Receivers
 pred wellformed_matching[m: Matching] {
-    all rx: Receiver | lone (m.matching).rx
+    all rx: Receiver | lone m.matching.rx
 }
 
 pred wellformed_matching_px_pref_rx_pref {
@@ -44,34 +44,32 @@ pred wellformed_matching_px_pref_rx_pref {
     all rx: Receiver | wellformed_rx_pref[rx]
 }
 
-// absence of a blocking pair: A matching is stable if there is no pair of 
-// participants who prefer each other to their assigned match
-pred stable_blocking_pair[m: Matching] {
+pred px_accepts[m: set Proposer -> Receiver, px: Proposer, rx: Receiver] {
+    some px.px_pref[rx]
+    let mx = m[px] | some mx => px.px_pref[rx] < px.px_pref[mx]
+}
+
+pred rx_accepts[m: set Proposer -> Receiver, px: Proposer, rx: Receiver] {
+    some rx.rx_pref[px]
+    let mx = m.rx | some mx => rx.rx_pref[px] < rx.rx_pref[mx]
+}
+
+pred stable_blocking_pair[m: set Proposer -> Receiver] {
     no px: Proposer, rx: Receiver | {
         px_accepts[m, px, rx]
         rx_accepts[m, px, rx]
     }
 }
 
-pred px_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = px.(m.matching) | 
-        some mx => rx.(px.px_pref) < mx.(px.px_pref) else some rx.(px.px_pref)
-}
-
-pred rx_accepts[m: Matching, px: Proposer, rx: Receiver] {
-    let mx = (m.matching).rx |
-        some mx => px.(rx.rx_pref) < mx.(rx.rx_pref) else some px.(rx.rx_pref)
-}
-
-// individual rationality: A matching is individually rational if each participant 
+// individual rationality: A matching is individually rational if each participant
 // prefers their assigned match to being unmatched
-pred stable_rationality[m: Matching] {
+pred stable_rationality[m: set Proposer -> Receiver] {
     // if a participant is matched, they must have a preference for the other person
-    all px: Proposer | px.(m.matching) in (px.px_pref).Int
-    all rx: Receiver | (m.matching).rx in (rx.rx_pref).Int
+    all px: Proposer | m[px] in px.px_pref.Int
+    all rx: Receiver | m.rx in rx.rx_pref.Int
 }
 
-pred stable[m: Matching] {
+pred stable[m: set Proposer -> Receiver] {
     stable_blocking_pair[m]
     stable_rationality[m]
 }
@@ -80,27 +78,29 @@ pred stable[m: Matching] {
 
 fun none_min[ints: set Int]: lone Int {
     some ints => min[ints] else none
-} 
+}
 
 one sig Status {
-    var offer: set Proposer -> Receiver,
-    var partial_matching: set Proposer -> Receiver
+    var offer: set Proposer -> Receiver
+--    var partial_matching: set Proposer -> Receiver
 }
 
 pred initial_status {
     Status.offer = px_pref.0
-    no Status.partial_matching
+--    no Status.partial_matching
 }
 
 pred matching_step {
+    -- if a proposer couldn't make any offers, they can't make one now
     Status.offer'.Receiver in Status.offer.Receiver
 
+    -- each receiver chooses their favorite offering proposer, and rejects all others 
     all rx: Receiver {
-        let best_px = rx.rx_pref.(none_min[rx.rx_pref[Status.offer.rx]]) | {
-            Status.partial_matching'.rx = best_px
+        let best_px = rx.rx_pref.(none_min[rx.rx_pref[Status.offer.rx]]) {
+--            Status.partial_matching'.rx = best_px
             Status.offer'[best_px] = (some best_px => rx else none)
             all rejected_px: Status.offer.rx - best_px {
-                Status.offer'[rejected_px] 
+                Status.offer'[rejected_px]
                     = rejected_px.px_pref.(add[1, rejected_px.px_pref[rx]])
             }
         }
@@ -108,51 +108,8 @@ pred matching_step {
 }
 
 pred terminal_status {
-    Status.offer = Status.partial_matching
-}
-
-run {
-    some p1,p2,p3: Proposer, r1,r2,r3: Receiver|{
-    //each proposer preferences
-    p1.px_pref = (r2 -> 0 + r1 -> 1 + r3 -> 2)
-    p2.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
-    p3.px_pref = (r1 -> 0 + r2 -> 1 + r3 -> 2)
-    //each receiver preferences
-    r1.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
-    r2.rx_pref = (p3 -> 0 + p2 -> 1 + p1 -> 2)
-    r3.rx_pref = (p1 -> 0 + p3 -> 1 + p2 -> 2)
-
-    always matching_step
-    
-    no partial_matching
-    
-    offer = `Status0 -> (p1 -> r2 + p2 -> r1 + p3 -> r1)
-    
-    partial_matching' = `Status0 -> (p1 -> r2 +  p3 -> r1)
-    
-    //r1 rejects p2 who has to propose to r2(their next top choice) in the next step
-    
-    offer' = `Status0 -> (p2 -> r2 + p1 -> r2 +  p3 -> r1)
-    
-    //r2 accepts p2 and rejects their current match p1
-    partial_matching'' = `Status0 -> (p2 -> r2 + p3 -> r1)
-    //p1 has to propose to r1(their next top choice) in the next step
-    
-    offer'' = `Status0 -> (p1 -> r1 + p2 -> r2 + p3 -> r1)
-    
-    //r1 accepts p1 and rejects their current match p3
-    partial_matching''' = `Status0 -> (p1 -> r1 + p2 -> r2)
-    //p3 has to propose to r2(their next top choice) in the next step
-    offer''' = `Status0 -> (p3 -> r2 + p1 -> r1 + p2 -> r2)
-    //r2 accepts p3 and rejects their current match p2
-    partial_matching'''' = `Status0 -> (p1 -> r1 + p3 -> r2)
-    //p2 has to propose to r3(their next top choice) in the next step
-    offer'''' = `Status0 -> (p2 -> r3 + p1 -> r1 + p3 -> r2)
-    //r3 matches with p2 since they have no other matches
-    partial_matching''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
-    //no rejections
-    offer''''' = `Status0 -> (p1 -> r1 + p3 -> r2 + p2 -> r3)
-    }
+    -- receivers end up with at most one offer: an offer that they are okay with
+    all rx: Receiver | lone Status.offer.rx and Status.offer.rx in rx.rx_pref.Int
 }
 
 run {
@@ -164,7 +121,7 @@ run {
 
     all rx: Receiver | #rx.rx_pref = 3
     all px: Proposer | #px.px_pref = 3
-  
+
     // all px : Proposer | Receiver in (px.px_pref).Int
     // #Proposer.(Status.offer) = 2
     // #Proposer.px_pref.0 >1
