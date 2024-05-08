@@ -2,13 +2,17 @@
 option max_tracelength 10
 option run_sterling "model_vis.js"
 
-sig Receiver {
-    rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
+sig RxPref {
+    m_rx_pref: pfunc Proposer -> Int // Receivers rank Proposers
 }
 
-sig Proposer {
-    px_pref: pfunc Receiver -> Int // Proposers rank Receivers
+sig PxPref {
+    m_px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
+
+sig Receiver {}
+
+sig Proposer {}
 
 -- TODO: create new sigs ReceiverPreferences and ProposerPreferences,
 -- which are paramaters for stable*[] predicates
@@ -16,18 +20,18 @@ sig Proposer {
 -- note: pfunc constraint cannot be expressed: illegal syntax: Receiver -> pfunc Proposer -> Int
 
 // ordered preferences, with the numbers 1 to n
-pred wellformed_px_pref[px: Proposer] {
-    px.px_pref[Receiver] = { i: Int | 0 <= i and i < #{px.px_pref} }
+pred wellformed_px_pref[px_pref: PxPref] {
+    px_pref.m_px_pref[Receiver] = { i: Int | 0 <= i and i < #{px_pref.m_px_pref} }
 }
 
 // ordered preferences, with the numbers 1 to n
-pred wellformed_rx_pref[rx: Receiver] {
-    rx.rx_pref[Proposer] = { i: Int | 0 <= i and i < #{rx.rx_pref} }
+pred wellformed_rx_pref[rx_pref: RxPref] {
+    rx_pref.m_rx_pref[Proposer] = { i: Int | 0 <= i and i < #{rx_pref.m_rx_pref} }
 }
 
 pred well_formed_preferences {
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
+    all px_pref: PxPref | wellformed_px_pref[px_pref]
+    all rx_pref: RxPref | wellformed_rx_pref[rx_pref]
 }
 
 sig Matching {
@@ -41,38 +45,29 @@ pred wellformed_matching[m: Matching] {
 
 pred wellformed_matching_px_pref_rx_pref {
     all m: Matching | wellformed_matching[m]
-    all px: Proposer | wellformed_px_pref[px]
-    all rx: Receiver | wellformed_rx_pref[rx]
+    well_formed_preferences
 }
 
-pred px_accepts[m: set Proposer -> Receiver, px: Proposer, rx: Receiver] {
-    some px.px_pref[rx]
-    let mx = m[px] | some mx => px.px_pref[rx] < px.px_pref[mx]
-}
-
-pred rx_accepts[m: set Proposer -> Receiver, px: Proposer, rx: Receiver] {
-    some rx.rx_pref[px]
-    let mx = m.rx | some mx => rx.rx_pref[px] < rx.rx_pref[mx]
-}
-
-pred stable_blocking_pair[m: set Proposer -> Receiver] {
+pred stable_blocking_pair[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
     no px: Proposer, rx: Receiver | {
-        px_accepts[m, px, rx]
-        rx_accepts[m, px, rx]
+        some px_pref.m_px_pref[rx]
+        some rx_pref.m_rx_pref[px]
+        let mx = m[px] | some mx => px_pref.m_px_pref[rx] < px_pref.m_px_pref[mx]
+        let mx = m.rx | some mx => rx_pref.m_rx_pref[px] < rrx_pref.m_rx_pref[mx]
     }
 }
 
 // individual rationality: A matching is individually rational if each participant
 // prefers their assigned match to being unmatched
-pred stable_rationality[m: set Proposer -> Receiver] {
+pred stable_rationality[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
     // if a participant is matched, they must have a preference for the other person
-    all px: Proposer | m[px] in px.px_pref.Int
-    all rx: Receiver | m.rx in rx.rx_pref.Int
+    all px: Proposer | m[px] in px_pref.m_px_pref.Int
+    all rx: Receiver | m.rx in rx_pref.m_rx_pref.Int
 }
 
-pred stable[m: set Proposer -> Receiver] {
-    stable_blocking_pair[m]
-    stable_rationality[m]
+pred stable[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
+    stable_blocking_pair[m, px_pref, rx_pref]
+    stable_rationality[m, px_pref, rx_pref]
 }
 
 --------------- stable matching algorithm -------------------------------------
@@ -81,49 +76,91 @@ fun none_min[ints: set Int]: lone Int {
     some ints => min[ints] else none
 }
 
+--px_prefs.m_px_prefs -- func Proposer -> PxPref
+--px_prefs.m_px_prefs.m_px_pref -- func Proposer -> Receiver -> Int
+--px_prefs.m_px_prefs.m_px_pref.0 -- func Proposer -> Receiver
+
+-- px.px_prefs -> px_prefs.m_px_prefs.m_px_pref[px] -- Receiver -> Int
+-- rx.rx_prefs -> rx_prefs.m_rx_prefs.m_rx_pref[rx] -- Proposer -> Int
+
+
+
 one sig Status {
     var offer: set Proposer -> Receiver
 }
 
-pred initial_status {
-    Status.offer = px_pref.0
+pred initial_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
+    Status.offer = px_prefs.m_px_pref.0
 }
 
-pred matching_step {
+pred matching_step[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     -- if a proposer couldn't make any offers, they can't make one now
-    Status.offer'.Receiver in Status.offer.Receiver
+    s.offer'.Receiver in s.offer.Receiver
 
     -- each receiver chooses their favorite offering proposer, and rejects all others 
     all rx: Receiver {
-        let best_px = rx.rx_pref.(none_min[rx.rx_pref[Status.offer.rx]]) {
-            Status.offer'[best_px] = (some best_px => rx else none)
-            all rejected_px: Status.offer.rx - best_px {
-                Status.offer'[rejected_px]
-                    = rejected_px.px_pref.(add[1, rejected_px.px_pref[rx]])
+        let best_px = rx_prefs.m_rx_pref[rx].(none_min[rx_prefs.m_rx_pref[rx][s.offer.rx]]) {
+            s.offer'[best_px] = (some best_px => rx else none)
+            all rejected_px: s.offer.rx - best_px {
+                s.offer'[rejected_px]
+                    = px_prefs.m_px_pref[rejected_px].(add[1, px_prefs.m_px_pref[rejected_px][rx]])
             }
         }
     }
 }
 
-pred terminal_status {
+pred terminal_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     -- receivers end up with at most one offer: an offer that they are okay with
-    all rx: Receiver | lone Status.offer.rx and Status.offer.rx in rx.rx_pref.Int
+    all rx: Receiver | lone s.offer.rx and s.offer.rx in rx_prefs.m_rx_pref[rx].Int
+}
+
+sig PxPrefs {
+    m_px_prefs: func Proposer -> PxPrefa
+}
+
+sig RxPrefs {
+    m_rx_prefs: func Receiver -> RxPref
+}
+
+/*
+pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
+    ...
 }
 
 run {
-    initial_status
+    some s1: Status, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
+        lying[lying_rx, true_rx_prefs, false_rx_prefs]
+        initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+        initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+        always well_formed_preferences
+        always matching_step[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+        always matching_step[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+        eventually {
+            terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+            terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+            lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
+            //the ranking 
+            s1.offer.lying_rx
+            s2.offer.lying_rx
+        }
+    }
+} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs
+*/
 
-    always well_formed_preferences
-    always matching_step
-    eventually terminal_status
+run {
+    some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
+        initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+        always well_formed_preferences
+        always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+        eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+    }
 
-    all rx: Receiver | #rx.rx_pref = 3
-    all px: Proposer | #px.px_pref = 3
-
+    --all rx: Receiver | #rx.rx_pref = 3
+    --all px: Proposer | #px.px_pref = 3
     // all px : Proposer | Receiver in (px.px_pref).Int
     // #Proposer.(Status.offer) = 2
     // #Proposer.px_pref.0 >1
-} for exactly 3 Receiver, exactly 3 Proposer
+} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs
 
 --------------- end stable matching algorithm -------------------------------------
 
