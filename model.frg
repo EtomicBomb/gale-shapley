@@ -53,7 +53,7 @@ pred stable_blocking_pair[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref:
         some px_pref.m_px_pref[rx]
         some rx_pref.m_rx_pref[px]
         let mx = m[px] | some mx => px_pref.m_px_pref[rx] < px_pref.m_px_pref[mx]
-        let mx = m.rx | some mx => rx_pref.m_rx_pref[px] < rrx_pref.m_rx_pref[mx]
+        let mx = m.rx | some mx => rx_pref.m_rx_pref[px] < rx_pref.m_rx_pref[mx]
     }
 }
 
@@ -99,11 +99,11 @@ pred matching_step[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func 
 
     -- each receiver chooses their favorite offering proposer, and rejects all others 
     all rx: Receiver {
-        let best_px = rx_prefs.m_rx_pref[rx].(none_min[rx_prefs.m_rx_pref[rx][s.offer.rx]]) {
+        let best_px = (rx_prefs.m_rx_pref[rx]).(none_min[rx_prefs.m_rx_pref[rx][s.offer.rx]]) {
             s.offer'[best_px] = (some best_px => rx else none)
             all rejected_px: s.offer.rx - best_px {
                 s.offer'[rejected_px]
-                    = px_prefs.m_px_pref[rejected_px].(add[1, px_prefs.m_px_pref[rejected_px][rx]])
+                    = (px_prefs.m_px_pref[rejected_px]).(add[1, px_prefs.m_px_pref[rejected_px][rx]])
             }
         }
     }
@@ -111,11 +111,11 @@ pred matching_step[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func 
 
 pred terminal_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     -- receivers end up with at most one offer: an offer that they are okay with
-    all rx: Receiver | lone s.offer.rx and s.offer.rx in rx_prefs.m_rx_pref[rx].Int
+    all rx: Receiver | lone s.offer.rx and s.offer.rx in (rx_prefs.m_rx_pref[rx]).Int
 }
 
 sig PxPrefs {
-    m_px_prefs: func Proposer -> PxPrefa
+    m_px_prefs: func Proposer -> PxPref
 }
 
 sig RxPrefs {
@@ -138,10 +138,10 @@ run {
         eventually {
             terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
             terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-            lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
-            //the ranking 
-            s1.offer.lying_rx
-            s2.offer.lying_rx
+            //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
+            -- (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s2.offer.lying_rx) < (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s1.offer.lying_rx) 
+            // s1.offer.lying_rx
+            // s2.offer.lying_rx
         }
     }
 } for exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs
