@@ -125,13 +125,11 @@ sig RxPrefs {
 
 pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
     //all receiver except lying_rx have the same preferences
-    all rx : Receiver - lying_rx |{
+    all rx : Receiver - lying_rx {
         false_rx_prefs.m_rx_prefs.m_rx_pref[rx] = true_rx_prefs.m_rx_prefs.m_rx_pref[rx] 
-    
     }
     //lying only represents their most preferred proposer and no one else
-     false_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] != true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] 
-    
+    false_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] != true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] 
 }
 
 run {
@@ -140,8 +138,6 @@ run {
         //just to ensure that all proposers and receivers have 3 preferences
         all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
         all rx: Receiver | #((true_rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
-   
-
 
         initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
         initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
