@@ -10,7 +10,9 @@ sig PxPref {
     m_px_pref: pfunc Receiver -> Int // Proposers rank Receivers
 }
 
-sig Receiver {}
+sig Receiver {
+    
+}
 
 sig Proposer {}
 
@@ -85,12 +87,12 @@ fun none_min[ints: set Int]: lone Int {
 
 
 
-one sig Status {
+ sig Status {
     var offer: set Proposer -> Receiver
 }
 
 pred initial_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
-    Status.offer = px_prefs.m_px_pref.0
+    s.offer = px_prefs.m_px_pref.0
 }
 
 pred matching_step[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
@@ -122,14 +124,27 @@ sig RxPrefs {
     m_rx_prefs: func Receiver -> RxPref
 }
 
-/*
+
 pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
-    ...
+    //all receiver except lying_rx have the same preferences
+    all rx : Receiver - lying_rx |{
+        false_rx_prefs.m_rx_prefs.m_rx_pref[rx] = true_rx_prefs.m_rx_prefs.m_rx_pref[rx] 
+    
+    }
+    //lying only represents their most preferred proposer and no one else
+     false_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] != true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] 
+    
 }
 
 run {
-    some s1: Status, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
+    some disj s1, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
         lying[lying_rx, true_rx_prefs, false_rx_prefs]
+        //just to ensure that all proposers and receivers have 3 preferences
+        all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
+        all rx: Receiver | #((true_rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
+   
+
+
         initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
         initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
         always well_formed_preferences
@@ -139,28 +154,27 @@ run {
             terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
             terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
             //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
-            -- (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s2.offer.lying_rx) < (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s1.offer.lying_rx) 
-            // s1.offer.lying_rx
-            // s2.offer.lying_rx
+            true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s2.offer.lying_rx] < true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s1.offer.lying_rx]
+           
         }
     }
-} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs
-*/
+} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs, exactly 2 Status
 
-run {
-    some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
-        initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        always well_formed_preferences
-        always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-    }
 
-    --all rx: Receiver | #rx.rx_pref = 3
-    --all px: Proposer | #px.px_pref = 3
-    // all px : Proposer | Receiver in (px.px_pref).Int
-    // #Proposer.(Status.offer) = 2
-    // #Proposer.px_pref.0 >1
-} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs
+// run {
+//     some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
+//         initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+//         always well_formed_preferences
+//         always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+//         eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+//     }
+
+//     --all rx: Receiver | #rx.rx_pref = 3
+//     --all px: Proposer | #px.px_pref = 3
+//     // all px : Proposer | Receiver in (px.px_pref).Int
+//     // #Proposer.(Status.offer) = 2
+//     // #Proposer.px_pref.0 >1
+// } for exactly 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs
 
 --------------- end stable matching algorithm -------------------------------------
 
