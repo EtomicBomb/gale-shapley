@@ -48,26 +48,26 @@ pred wellformed_matching_px_pref_rx_pref {
     well_formed_preferences
 }
 
-pred stable_blocking_pair[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
+pred stable_blocking_pair[m: set Proposer -> Receiver, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     no px: Proposer, rx: Receiver | {
-        some px_pref.m_px_pref[rx]
-        some rx_pref.m_rx_pref[px]
-        let mx = m[px] | some mx => px_pref.m_px_pref[rx] < px_pref.m_px_pref[mx]
-        let mx = m.rx | some mx => rx_pref.m_rx_pref[px] < rx_pref.m_rx_pref[mx]
+        some px_prefs[px].m_px_pref[rx]
+        some rx_prefs[rx].m_rx_pref[px]
+        let mx = m[px] | some mx => px_prefs[px].m_px_pref[rx] < px_prefs[px].m_px_pref[mx]
+        let mx = m.rx | some mx => rx_prefs[rx].m_rx_pref[px] < rx_prefs[rx].m_rx_pref[mx]
     }
 }
 
 // individual rationality: A matching is individually rational if each participant
 // prefers their assigned match to being unmatched
-pred stable_rationality[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
+pred stable_rationality[m: set Proposer -> Receiver, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     // if a participant is matched, they must have a preference for the other person
-    all px: Proposer | m[px] in px_pref.m_px_pref.Int
-    all rx: Receiver | m.rx in rx_pref.m_rx_pref.Int
+    all px: Proposer | m[px] in px_prefs[px].m_px_pref.Int
+    all rx: Receiver | m.rx in rx_prefs[rx].m_rx_pref.Int
 }
 
-pred stable[m: set Proposer -> Receiver, px_pref: PxPref, rx_pref: RxPref] {
-    stable_blocking_pair[m, px_pref, rx_pref]
-    stable_rationality[m, px_pref, rx_pref]
+pred stable[m: set Proposer -> Receiver, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
+    stable_blocking_pair[m, px_prefs, rx_prefs]
+    stable_rationality[m, px_prefs, rx_prefs]
 }
 
 --------------- stable matching algorithm -------------------------------------
@@ -139,7 +139,7 @@ run {
             terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
             terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
             //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
-            -- (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s2.offer.lying_rx) < (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s1.offer.lying_rx) 
+            -- (true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s2.offer.lying_rx) <(true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx]).(s1.offer.lying_rx) 
             // s1.offer.lying_rx
             // s2.offer.lying_rx
         }
