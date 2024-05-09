@@ -98,8 +98,8 @@ function processRankings(group, fieldName, locationY) {
   return grid;
 }
 
-const receiverGrid = processRankings("Receiver", "rx_pref", 450);
-const proposerGrid = processRankings("Proposer", "px_pref", 80);
+const receiverGrid = processRankings("RxPref", "m_rx_pref", 450);
+const proposerGrid = processRankings("PxPref", "m_px_pref", 80);
 
 const labels = [
   { text: "Receiver's Rankings", x: 220, y: 400, fontSize: 30 },
