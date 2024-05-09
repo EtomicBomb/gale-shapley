@@ -1,68 +1,6 @@
 #lang forge/temporal
 open "model.frg"
 
-test suite for wellformed_px_pref {
-    test expect {
-        manyPxPreferences: {
-            some px: Proposer, px_prefs: PxPrefs {
-                all px_pref: PxPref | wellformed_px_pref[px_pref]
-                #{(px_prefs.m_px_prefs.m_px_pref[px])} = 5
-            }
-        } for exactly 1 Proposer, 5 Receiver is sat
-        pxAlwaysZero: {
-            all px: Proposer, px_prefs: PxPrefs {
-                {
-                    (all px_pref: PxPref | wellformed_px_pref[px_pref])
-                    some (px_prefs.m_px_prefs.m_px_pref[px]) 
-                } => 0 in Receiver.(px_prefs.m_px_prefs.m_px_pref[px])
-            }
-        } for 5 Receiver, 5 Proposer is theorem
-        pxPrefSeq: {
-            all px: Proposer, px_prefs: PxPrefs {
-                (all px_pref: PxPref | wellformed_px_pref[px_pref]) => isSeqOf[~(px_prefs.m_px_prefs.m_px_pref[px]), Receiver]
-            }
-        } for exactly 1 Receiver, 5 Proposer is theorem
-        uniqueReceiverRankings: {
-            all px: Proposer, px_prefs: PxPrefs {
-                (all px_pref: PxPref | wellformed_px_pref[px_pref]) => {
-                    all disj p1, p2: (px_prefs.m_px_prefs.m_px_pref[px]).Int | (px_prefs.m_px_prefs.m_px_pref[px])[p1] != (px_prefs.m_px_prefs.m_px_pref[px])[p2]
-                }
-            }
-        } for exactly 3 Receiver, 3 Proposer is theorem
-    }
-}
-
-test suite for wellformed_rx_pref {
-    test expect {
-        manyRxPreferences: {
-            some rx: Receiver, rx_prefs: RxPrefs {
-                all rx_pref: RxPref | wellformed_rx_pref[rx_pref]
-                #{(rx_prefs.m_rx_prefs.m_rx_pref[rx])} = 5
-            }
-        } for exactly 1 Receiver, 5 Proposer is sat
-        rxAlwaysZero: {
-            all rx: Receiver, rx_prefs: RxPrefs {
-                {
-                    (all rx_pref: RxPref | wellformed_rx_pref[rx_pref])
-                    some (rx_prefs.m_rx_prefs.m_rx_pref[rx]) 
-                } => 0 in Proposer.(rx_prefs.m_rx_prefs.m_rx_pref[rx])
-            }
-        } for 5 Receiver, 5 Proposer is theorem
-        rxPrefSeq: {
-            all rx: Receiver, rx_prefs: RxPrefs {
-                (all rx_pref: RxPref | wellformed_rx_pref[rx_pref]) => isSeqOf[~(rx_prefs.m_rx_prefs.m_rx_pref[rx]), Proposer]
-            }
-        } for exactly 1 Receiver, 5 Proposer is theorem
-        uniqueProposerRankings: {
-            all rx: Receiver, rx_prefs: RxPrefs {
-                (all rx_pref: RxPref | wellformed_rx_pref[rx_pref]) => {
-                    all disj p1, p2: (rx_prefs.m_rx_prefs.m_rx_pref[rx]).Int | (rx_prefs.m_rx_prefs.m_rx_pref[rx])[p1] != (rx_prefs.m_rx_prefs.m_rx_pref[rx])[p2]
-                }
-            }
-        } for exactly 3 Receiver, 3 Proposer is theorem
-    }
-}
-
 test suite for stable_rationality {
     test expect {
         allPreferencesSanity: {
@@ -137,6 +75,68 @@ test suite for stable_blocking_pair {
     }
 }
 
+
+test suite for wellformed_px_pref {
+    test expect {
+        manyPxPreferences: {
+            some px: Proposer, px_prefs: PxPrefs {
+                all px_pref: PxPref | wellformed_px_pref[px_pref]
+                #{(px_prefs.m_px_prefs.m_px_pref[px])} = 5
+            }
+        } for exactly 1 Proposer, 5 Receiver is sat
+        pxAlwaysZero: {
+            all px: Proposer, px_prefs: PxPrefs {
+                {
+                    (all px_pref: PxPref | wellformed_px_pref[px_pref])
+                    some (px_prefs.m_px_prefs.m_px_pref[px]) 
+                } => 0 in Receiver.(px_prefs.m_px_prefs.m_px_pref[px])
+            }
+        } for 5 Receiver, 5 Proposer is theorem
+        pxPrefSeq: {
+            all px: Proposer, px_prefs: PxPrefs {
+                (all px_pref: PxPref | wellformed_px_pref[px_pref]) => isSeqOf[~(px_prefs.m_px_prefs.m_px_pref[px]), Receiver]
+            }
+        } for exactly 1 Receiver, 5 Proposer is theorem
+        uniqueReceiverRankings: {
+            all px: Proposer, px_prefs: PxPrefs {
+                (all px_pref: PxPref | wellformed_px_pref[px_pref]) => {
+                    all disj p1, p2: (px_prefs.m_px_prefs.m_px_pref[px]).Int | (px_prefs.m_px_prefs.m_px_pref[px])[p1] != (px_prefs.m_px_prefs.m_px_pref[px])[p2]
+                }
+            }
+        } for exactly 3 Receiver, 3 Proposer is theorem
+    }
+}
+
+test suite for wellformed_rx_pref {
+    test expect {
+        manyRxPreferences: {
+            some rx: Receiver, rx_prefs: RxPrefs {
+                all rx_pref: RxPref | wellformed_rx_pref[rx_pref]
+                #{(rx_prefs.m_rx_prefs.m_rx_pref[rx])} = 5
+            }
+        } for exactly 1 Receiver, 5 Proposer is sat
+        rxAlwaysZero: {
+            all rx: Receiver, rx_prefs: RxPrefs {
+                {
+                    (all rx_pref: RxPref | wellformed_rx_pref[rx_pref])
+                    some (rx_prefs.m_rx_prefs.m_rx_pref[rx]) 
+                } => 0 in Proposer.(rx_prefs.m_rx_prefs.m_rx_pref[rx])
+            }
+        } for 5 Receiver, 5 Proposer is theorem
+        rxPrefSeq: {
+            all rx: Receiver, rx_prefs: RxPrefs {
+                (all rx_pref: RxPref | wellformed_rx_pref[rx_pref]) => isSeqOf[~(rx_prefs.m_rx_prefs.m_rx_pref[rx]), Proposer]
+            }
+        } for exactly 1 Receiver, 5 Proposer is theorem
+        uniqueProposerRankings: {
+            all rx: Receiver, rx_prefs: RxPrefs {
+                (all rx_pref: RxPref | wellformed_rx_pref[rx_pref]) => {
+                    all disj p1, p2: (rx_prefs.m_rx_prefs.m_rx_pref[rx]).Int | (rx_prefs.m_rx_prefs.m_rx_pref[rx])[p1] != (rx_prefs.m_rx_prefs.m_rx_pref[rx])[p2]
+                }
+            }
+        } for exactly 3 Receiver, 3 Proposer is theorem
+    }
+}
 
 test suite for matching_step {
     test expect {
