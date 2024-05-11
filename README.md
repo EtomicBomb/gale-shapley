@@ -17,8 +17,9 @@ There are several variants of the stable matching problem. We have chosen to con
 
 An application for this version of the stable matching problem could be matching mentors and mentees. 
 
-# Design Quirks
 
+# Model Design and Visualization
+## Model Design
 Most descriptions of the Gale-Shapley algorithm are implementation-focused. In this way, they contain extra data structures that serve as redundant indexes into other data structures. These help with runtime performance. To model the algorithm in Forge, it was beneficial to find a minimal description of the Gale-Shapley algorithm. 
 
 The state of the algorithm in our model is represented by one data structure, `offer`. It is a set of pairs of proposers and receivers. A proposer-receiver pair `(px, rx)` means that `px` is proposing to `rx` in that round; *or* that `px` already has a tentative match to `rx`. The pair `(px, rx)` is considered a tentative match if `rx` accepts the proposal: if `px` is the only proposer matched with `rx` and `rx` ranks `px`. By lumping together tentative matches and active proposals, we are able to unify the two kinds of rejections in Gale-Shapley: receivers leaving proposers for a more favorable match, and proposers proposing to receivers where the receiver does not rank the proposer. 
@@ -28,6 +29,35 @@ The initial state of `offer` has every proposer paired with their favorite recei
 Other descriptions of the algorithm involve modifying an explicit collection of tentative matches. By avoiding this and using this simplified description of the algorithm, our tests become simpler and more performant.
 
 Our code also supports multiple sets of preferences for the participants. This is so that we can run multiple instances of the algorithm in parallel, and observe how changing the preferences influences the resulting match.
+
+## Visualization
+Since the default visualizer is hard to read, we created a custom visualizer for our model in `model.vis.js`. To run the visualizer, run model.frg using either the green button or run it through the terminal by typing `racket model.frg`. Unfortunetly, the visualizer doesn't load automatically, so you have to go to the Script section in the Sterling visualizer, copy the script in `model.vis.js`, and paste it into the script section. Make sure to run it through the svg option.
+When you run the custom visualizer, you'll see multiple grids representing the proposer's and receiver's true and false preferences. The grids below these show the offers from proposers to receivers at different stages.
+
+ # Signatures
+
+1. **Receiver**  
+   Represents the receivers  in the matching process.
+
+2. **Proposer**  
+   Represents the proposers in the matching process.
+
+3. **RxPref**  
+   A partial function that maps proposers to an integer, indicating preferences from the receiver's perspective.
+
+4. **PxPref**  
+   A partial function that maps receivers to an integer, indicating preferences from the proposer's perspective.
+5. **Status**  
+   Represents the offers from proposers to receivers at any given time. The offers in the final state represent the matches.
+6. **PxPrefs**  
+  A partial function mapping proposers to their preference lists.
+
+7. **RxPrefs**  
+  A partial function mapping receivers to their preference lists.
+
+8. **Matching**  
+  A partial function mapping proposers to receivers, representing the current state of matches.
+
 
 # Project Structure 
 
