@@ -77,6 +77,14 @@ pred stable[m: set Proposer -> Receiver] {
 
 --------------- stable matching algorithm -------------------------------------
 
+sig PxPrefs {
+    m_px_prefs: func Proposer -> PxPref
+}
+
+sig RxPrefs {
+    m_rx_prefs: func Receiver -> RxPref
+}
+
 fun none_min[ints: set Int]: lone Int {
     some ints => min[ints] else none
 }
