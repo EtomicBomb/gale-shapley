@@ -1,6 +1,7 @@
 # Exploring the Gale–Shapley Algorithm
 
 Collaborators: Ethan Williams(ewilli51), Enock Nyakundi(enyakundi), Muhiim Ali(mali37)
+
 Demo Video (~ 2 mins)
 # Project Overview
 
