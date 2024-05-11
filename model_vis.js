@@ -220,7 +220,7 @@ function visualElementsForOffers() {
     let matching_text = new TextBox({
       text: cleanedKey,
       coords: {
-        x: grid_x_location + grid_space * index,
+        x: grid_x_location + (grid_space / 20) * index,
         y: offer_grid_y_pos - 20,
       },
       color: "black",
