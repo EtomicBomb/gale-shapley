@@ -63,7 +63,10 @@ When you run the custom visualizer, you'll see multiple grids representing the p
 
 ## `model.frg`
 
-This file contains a formal specification of the stable matching property. 
+This file contains a formal specification of the stable matching property:
+=> For a matching to be considered a stable match it has to satisfy these two requirements:
+ 1. individual rationality: a matching is individually rational if nobody would strictly prefer to not to match than staying with the partner prescribed by the matching.
+ 2. absence of blocking pairs: A pair (px, rx) is called a blocking pair for a matching if both px and rx prefer each other more than their current match
 
 It also contains a formal specification of the Gale-Shapley algorithm. 
 
