@@ -70,7 +70,7 @@ function createVisualElements(key, value, x, y, grid) {
   const rect = new Rectangle({
     height: gridWidth / 2 - 10,
     width: gridWidth / 2 - 10,
-    color: "grey",
+    color: "lightgrey",
     borderColor: "black",
     borderWidth: 2,
     label: firstLetter + numKey,
@@ -90,7 +90,7 @@ function createVisualElements(key, value, x, y, grid) {
     const choices = new Rectangle({
       height: gridWidth / 2 - 10,
       width: gridWidth / 2 - 10,
-      color: "grey",
+      color: "lightgrey",
       borderColor: "black",
       borderWidth: 2,
       label: index + 1,

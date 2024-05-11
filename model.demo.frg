@@ -102,6 +102,12 @@ run {
 -- px rx collusion, rx benefits
 run {
     some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {
+        `PxPrefs0 = false_px_prefs
+        `RxPrefs0 = false_rx_prefs
+        `Status0 = s1
+        `PxPrefs1 = true_px_prefs
+        `RxPrefs1 = true_rx_prefs
+        `Status1 = s2
         pxLies[lying_px, true_px_prefs, false_px_prefs]
         rxLies[lying_rx, true_rx_prefs, false_rx_prefs]
         //just to ensure that all proposers and receivers have 3 preferences
