@@ -1,4 +1,5 @@
 # Exploring the Gale–Shapley Algorithm
+# Exploring the Gale–Shapley Algorithm
 
 This project is an exploration of the Gale-Shapley algorithm. It comes with:
 
@@ -76,5 +77,6 @@ These properties of the algorithm were previously well known, but we verified th
 These properties have major implications for implementors of the Gale-Shapley algorithm. In particular, effort to prevent misrepresentations by receivers are absolutely required. These measures may include discovering the true preferences from means other than asking receivers to self-report them.
 
 Additionally, effort is required for ensuring that proposers do not collude. This may include only using the Gale-Shapley algorithm in places where there are no strong outside motivations. Since colluding between proposers is only beneficial if one proposer gets a worse outcome, it could also be advisable to only admit proposers who are motivated to get the best outcomes. 
+
 
 
