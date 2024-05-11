@@ -1,6 +1,19 @@
 #lang forge/temporal
 open "model.frg"
 
+run {
+    some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
+        //just to ensure that all proposers and receivers have 3 preferences
+        #(px_prefs.m_px_prefs) >= 3
+        #(rx_prefs.m_rx_prefs) >= 3
+        initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+        always well_formed_preferences
+        always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+        not next_state terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+        not next_state next_state terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+    }
+} for exactly 0 Matching, 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs, exactly 1 Status
+
 pred twoPxCollusion[px1, px2: Proposer, true_px_prefs, false_px_prefs: PxPrefs] {
     all px: Proposer - px1 - px2 {
         false_px_prefs.m_px_prefs.m_px_pref[px] = true_px_prefs.m_px_prefs.m_px_pref[px] 
@@ -153,3 +166,4 @@ run {
         }
     }
 } for exactly 0 Matching, 3 Receiver, exactly 3 Proposer, exactly 2 RxPrefs, exactly 2 PxPrefs, exactly 2 Status
+
