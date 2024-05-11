@@ -163,8 +163,9 @@ run {
         eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
         all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
         all rx: Receiver | #((rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
-        // #Proposer.(Status.offer) = 2
+        #Proposer.(Status.offer) = 2
     }
+
 
    
 } for exactly 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs, exactly 1 Status
