@@ -14,11 +14,6 @@ sig Receiver {}
 
 sig Proposer {}
 
--- TODO: create new sigs ReceiverPreferences and ProposerPreferences,
--- which are paramaters for stable*[] predicates
--- then, we can alter these to see the impact on the resulting matches?
--- note: pfunc constraint cannot be expressed: illegal syntax: Receiver -> pfunc Proposer -> Int
-
 // ordered preferences, with the numbers 1 to n
 pred wellformed_px_pref[px_pref: PxPref] {
     px_pref.m_px_pref[Receiver] = { i: Int | 0 <= i and i < #{px_pref.m_px_pref} }
@@ -132,27 +127,27 @@ pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
     false_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] != true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] 
 }
 
-// run {
-//     some disj s1, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
-//         lying[lying_rx, true_rx_prefs, false_rx_prefs]
-//         //just to ensure that all proposers and receivers have 3 preferences
-//         all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
-//         all rx: Receiver | #((true_rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
+run {
+    some disj s1, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
+        lying[lying_rx, true_rx_prefs, false_rx_prefs]
+        //just to ensure that all proposers and receivers have 3 preferences
+        all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
+        all rx: Receiver | #((true_rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
 
-//         initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-//         initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-//         always well_formed_preferences
-//         always matching_step[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-//         always matching_step[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-//         eventually {
-//             terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-//             terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-//             //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
-//             true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s2.offer.lying_rx] < true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s1.offer.lying_rx]
-           
-//         }
-//     }
-// } for exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs, exactly 2 Status
+        initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+        initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+        always well_formed_preferences
+        always matching_step[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+        always matching_step[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+        eventually {
+            terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
+            terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
+            //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
+            true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s2.offer.lying_rx] < true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s1.offer.lying_rx]
+        
+        }
+    }
+} for 0 Matching, exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs, exactly 2 Status
 
 
 run {

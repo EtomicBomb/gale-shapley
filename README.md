@@ -1,5 +1,4 @@
 # Exploring the Gale–Shapley Algorithm
-# Exploring the Gale–Shapley Algorithm
 
 This project is an exploration of the Gale-Shapley algorithm. It comes with:
 
@@ -20,7 +19,7 @@ An application for this version of the stable matching problem could be matching
 
 # Design Quirks
 
-Most descriptions of the Gale-Shapley algorithm are implementation-focused. In this way, they contain extra data structures that serve as redundant indexes into other data structures. These help with runtime performance. To model the algorithm in Forge, it was beneficial to find a minimal description of the Gale-Shapely algorithm. 
+Most descriptions of the Gale-Shapley algorithm are implementation-focused. In this way, they contain extra data structures that serve as redundant indexes into other data structures. These help with runtime performance. To model the algorithm in Forge, it was beneficial to find a minimal description of the Gale-Shapley algorithm. 
 
 The state of the algorithm in our model is represented by one data structure, `offer`. It is a set of pairs of proposers and receivers. A proposer-receiver pair `(px, rx)` means that `px` is proposing to `rx` in that round; *or* that `px` already has a tentative match to `rx`. The pair `(px, rx)` is considered a tentative match if `rx` accepts the proposal: if `px` is the only proposer matched with `rx` and `rx` ranks `px`. By lumping together tentative matches and active proposals, we are able to unify the two kinds of rejections in Gale-Shapley: receivers leaving proposers for a more favorable match, and proposers proposing to receivers where the receiver does not rank the proposer. 
 
@@ -60,7 +59,7 @@ You are here.
 
 # What We Learned
 
-We wanted to see if there are stable matchings that cannot be produced by the Gale-Shapley algorithm. We found out that this is the case, since there are some sets of preferences for which there exist multiple stable matchings. The Gale-Shapely algorithm is fully deterministic.
+We wanted to see if there are stable matchings that cannot be produced by the Gale-Shapley algorithm. We found out that this is the case, since there are some sets of preferences for which there exist multiple stable matchings. The Gale-Shapley algorithm is fully deterministic.
 
 We wanted to see if lying can benefit proposers. We verified that, with three or fewer participants, a proposer that misrepresents their individual preferences can never benefit.
 
@@ -74,7 +73,7 @@ Proposer-receiver collusion is possible in that if a proposer and a receiver coo
 
 These properties of the algorithm were previously well known, but we verified them using Forge and without any domain-specific mathematical techniques.
 
-These properties have major implications for implementors of the Gale-Shapley algorithm. In particular, effort to prevent misrepresentations by receivers are absolutely required. These measures may include discovering the true preferences from means other than asking receivers to self-report them.
+These properties have major implications for implementers of the Gale-Shapley algorithm. In particular, effort to prevent misrepresentations by receivers are absolutely required. These measures may include discovering the true preferences from means other than asking receivers to self-report them.
 
 Additionally, effort is required for ensuring that proposers do not collude. This may include only using the Gale-Shapley algorithm in places where there are no strong outside motivations. Since colluding between proposers is only beneficial if one proposer gets a worse outcome, it could also be advisable to only admit proposers who are motivated to get the best outcomes. 
 

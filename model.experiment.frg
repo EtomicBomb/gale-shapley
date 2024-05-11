@@ -1,7 +1,6 @@
 #lang forge/temporal
 open "model.frg"
 
-
 pred twoPxCollusion[px1, px2: Proposer, true_px_prefs, false_px_prefs: PxPrefs] {
     all px: Proposer - px1 - px2 {
         false_px_prefs.m_px_prefs.m_px_pref[px] = true_px_prefs.m_px_prefs.m_px_pref[px] 
