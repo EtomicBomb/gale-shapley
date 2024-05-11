@@ -12,6 +12,8 @@ run {
     some disj s1, s2: Status, rx_prefs: RxPrefs, true_px_prefs, false_px_prefs: PxPrefs, px1, px2: Proposer {
         `PxPrefs0 = false_px_prefs
         `Status0 = s2
+        `Proposer0 = px1
+        `Proposer1 = px2
         `PxPrefs1 = true_px_prefs
         `Status1 = s1
         twoPxCollusion[px1, px2, true_px_prefs, false_px_prefs]
@@ -59,6 +61,7 @@ run {
     some disj s1, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
         `RxPrefs0 = false_rx_prefs
         `Status0 = s2
+        `Receiver0 = lying_rx
         `RxPrefs1 = true_rx_prefs
         `Status1 = s1
         #(true_rx_prefs.m_rx_prefs) >= 3
@@ -87,6 +90,8 @@ run {
     some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {
         `PxPrefs0 = false_px_prefs
         `RxPrefs0 = false_rx_prefs
+        `Receiver0 = lying_rx
+        `Proposer0 = lying_px
         `Status0 = s2
         `PxPrefs1 = true_px_prefs
         `RxPrefs1 = true_rx_prefs
@@ -118,6 +123,8 @@ run {
     some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {
         `PxPrefs0 = false_px_prefs
         `RxPrefs0 = false_rx_prefs
+        `Receiver0 = lying_rx
+        `Proposer0 = lying_px
         `Status0 = s2
         `PxPrefs1 = true_px_prefs
         `RxPrefs1 = true_rx_prefs
