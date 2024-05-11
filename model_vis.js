@@ -237,7 +237,7 @@ function visualElementsForOffers() {
       const proposerRect = new Rectangle({
         height: offer_grid_width / 2 - 10,
         width: offer_grid_width / 2 - 10,
-        color: "blue",
+        color: "#FDDE55",
         borderColor: "black",
         borderWidth: 1,
         label: px,
@@ -246,7 +246,7 @@ function visualElementsForOffers() {
       const receiverRect = new Rectangle({
         height: offer_grid_width / 2 - 10,
         width: offer_grid_width / 2 - 10,
-        color: "red",
+        color: "#FF8888",
         borderColor: "black",
         borderWidth: 1,
         label: rx,
