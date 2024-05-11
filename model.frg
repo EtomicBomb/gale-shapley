@@ -79,16 +79,7 @@ fun none_min[ints: set Int]: lone Int {
     some ints => min[ints] else none
 }
 
---px_prefs.m_px_prefs -- func Proposer -> PxPref
---px_prefs.m_px_prefs.m_px_pref -- func Proposer -> Receiver -> Int
---px_prefs.m_px_prefs.m_px_pref.0 -- func Proposer -> Receiver
-
--- px.px_prefs -> px_prefs.m_px_prefs.m_px_pref[px] -- Receiver -> Int
--- rx.rx_prefs -> rx_prefs.m_rx_prefs.m_rx_pref[rx] -- Proposer -> Int
-
-
-
- sig Status {
+sig Status {
     var offer: set Proposer -> Receiver
 }
 
@@ -116,15 +107,6 @@ pred terminal_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: fun
     -- receivers end up with at most one offer: an offer that they are okay with
     all rx: Receiver | lone s.offer.rx and s.offer.rx in (rx_prefs.m_rx_pref[rx]).Int
 }
-
-sig PxPrefs {
-    m_px_prefs: func Proposer -> PxPref
-}
-
-sig RxPrefs {
-    m_rx_prefs: func Receiver -> RxPref
-}
-
 
 pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
     //all receiver except lying_rx have the same preferences
