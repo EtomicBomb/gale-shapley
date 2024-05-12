@@ -27,7 +27,14 @@ An application for this version of the stable matching problem could be matching
 
 ## Model Design
 
-Most descriptions of the Gale-Shapley algorithm are implementation-focused. In this way, they contain extra data structures that serve as redundant indexes into other data structures. These help with runtime performance. To model the algorithm in Forge, it was beneficial to find a minimal description of the Gale-Shapley algorithm.
+Most descriptions of the Gale-Shapley algorithm are implementation-focused. In this way, they contain extra data structures that serve as redundant indexes into other data structures. These help with runtime performance. 
+**There was a significant effort in identifying a minimal description of the Gale-Shapley algorithm**
+
+During development, the description of the Gale-Shapley algorithm was much more complex, and the size of matching-step had several times as much code as it currently does. Additional sigs and fields were present.
+
+It took a lot of effort to re-imagine the Gale-Shapley algorithm to be as simple as it is presented in `model.frg`. This effort was beneficial. To model the algorithm in Forge, we tried to find a minimal description of the Gale-Shapley algorithm.
+
+Our simplifed description of the core of the algorithm enabled us to be more confident in its correctness, and to perform other experiments to test the properties of the algorithm. Instead of complexifying the problem, we spent additional effort exploring the algorithm itself and its properties.
 
 The state of the algorithm in our model is represented by one data structure, `offer`. It is a set of pairs of proposers and receivers. A proposer-receiver pair `(px, rx)` means that `px` is proposing to `rx` in that round; _or_ that `px` already has a tentative match to `rx`. The pair `(px, rx)` is considered a tentative match if `rx` accepts the proposal: if `px` is the only proposer matched with `rx` and `rx` ranks `px`. By lumping together tentative matches and active proposals, we are able to unify the two kinds of rejections in Gale-Shapley: receivers leaving proposers for a more favorable match, and proposers proposing to receivers where the receiver does not rank the proposer.
 
