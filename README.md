@@ -2,7 +2,7 @@
 
 Collaborators: Ethan Williams(ewilli51), Enock Nyakundi(enyakundi), Muhiim Ali(mali37)
 
-Demo Video (~ 2 mins)
+Demo Video (~ 2 mins): https://youtu.be/VvZgK1gxtIQ
 # Project Overview
 
 This project is an exploration of the Gale-Shapley algorithm. It comes with:
