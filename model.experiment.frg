@@ -1,6 +1,10 @@
 #lang forge/temporal
 open "model.frg"
 
+/*
+This file checks some properties about the Gale-Shapley algorithm itself.
+*/
+
 pred twoPxCollusion[px1, px2: Proposer, true_px_prefs, false_px_prefs: PxPrefs] {
     all px: Proposer - px1 - px2 {
         false_px_prefs.m_px_prefs.m_px_pref[px] = true_px_prefs.m_px_prefs.m_px_pref[px] 
@@ -125,7 +129,6 @@ test expect {
 
 
 test expect {
-
     checkPxandRxColludeBothBenefit: {
         some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {
             pxLies[lying_px, true_px_prefs, false_px_prefs]
@@ -156,10 +159,6 @@ test expect {
         }
     } for exactly 0 Matching, 3 Receiver, exactly 3 Proposer, exactly 2 RxPrefs, exactly 2 PxPrefs, exactly 2 Status is unsat
 
-
-
-
-
     checkPxandRxColludePxBenefits: {
         some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {
             pxLies[lying_px, true_px_prefs, false_px_prefs]
@@ -181,11 +180,6 @@ test expect {
             }
         }
     } for exactly 0 Matching, 3 Receiver, exactly 3 Proposer, exactly 2 RxPrefs, exactly 2 PxPrefs, exactly 2 Status is sat
-
-
-
-
-
 
     checkPxandRxColludeRxBenefits: {
         some disj s1, s2: Status, true_px_prefs, false_px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_px: Proposer, lying_rx: Receiver {

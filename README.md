@@ -3,6 +3,7 @@
 Collaborators: Ethan Williams(ewilli51), Enock Nyakundi(enyakundi), Muhiim Ali(mali37)
 
 Demo Video (~ 2 mins): https://youtu.be/VvZgK1gxtIQ
+
 # Project Overview
 
 This project is an exploration of the Gale-Shapley algorithm. It comes with:
@@ -35,6 +36,28 @@ The initial state of `offer` has every proposer paired with their favorite recei
 Other descriptions of the algorithm involve modifying an explicit collection of tentative matches. By avoiding this and using this simplified description of the algorithm, our tests become simpler and more performant.
 
 Our code also supports multiple sets of preferences for the participants. This is so that we can run multiple instances of the algorithm in parallel, and observe how changing the preferences influences the resulting match.
+
+Developing this representation took significant effort, so we tried several other ways of representing the step-by-step nature of the algorithm. At one point we had two other data structures in `Status`.
+
+## Tradeoffs
+
+We only were able to choose one variant of the stable matching algorithm. We were able to run multiple instances of the stable matching algorithm at once. There were no experiments that are not included in the final report since we basically made linear progress.
+
+## Assumptions About Scope
+
+Aside from choosing one variant of the stable matching algorithm, we are also assuming that each receiver and proposer represent a single party, and that they are able to encode their preferences in a rank list.
+
+## Goals Change Since Proposal
+
+We met all of our target goals. We did not get to some of the reach goals, like considering other variants of the algorithm, nor did we develop a custom web interface (other than the one that comes with Sterling). We did not address lack of information either.
+
+## How to Understand The Visualizer
+
+The visualizer, `model_vis.js` shows a single step in the algorithm. You can use the time buttons to advance to the next step. The final step is the resulting match. Temporal Forge will loop back around to the final step as the lasso.
+
+The different columns correspond to multiple executions of the algorithm.
+
+The preferences, the proposer and receivers, and the offer status which changes over time are also shown.
 
 ## Visualization
 
@@ -85,6 +108,10 @@ This includes tests of our model. These tests are included to make sure that our
 
 This includes statements that check specific properties of the Gale-Shapley algorithm.
 
+## `model.demo.frg`
+
+This includes the run statements for our presentation and video.
+
 ## `model_vis.js`
 
 A visualizer for running our model and seeing the resulting offers.
@@ -116,3 +143,7 @@ These properties of the algorithm were previously well known, but we verified th
 These properties have major implications for implementers of the Gale-Shapley algorithm. In particular, effort to prevent misrepresentations by receivers are absolutely required. These measures may include discovering the true preferences from means other than asking receivers to self-report them.
 
 Additionally, effort is required for ensuring that proposers do not collude. This may include only using the Gale-Shapley algorithm in places where there are no strong outside motivations. Since colluding between proposers is only beneficial if one proposer gets a worse outcome, it could also be advisable to only admit proposers who are motivated to get the best outcomes.
+
+# Collaboration
+
+We did not receive outside help on this assignment.

@@ -1,6 +1,10 @@
 #lang forge/temporal
 open "model.frg"
 
+/*
+This file makes sure our model actually corresponds with the Gale-Shapley algorithm.
+*/
+
 test suite for stable_rationality {
     test expect {
         allPreferencesSanity: {
@@ -140,7 +144,6 @@ test suite for wellformed_rx_pref {
 
 test suite for matching_step {
     test expect {
-        /*
         eventuallyStable: {
             all s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
                 {
@@ -151,24 +154,15 @@ test suite for matching_step {
             }
         } for exactly 1 Status, exactly 1 PxPrefs, exactly 1 RxPrefs, 0 Matching is theorem
 
-        offersShrink: {
-            {
-                initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-                well_formed_preferences
-                always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-            } implies {
-                always #s.offer' <= #s.offer
+        alwaysTerminate: {
+            all s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
+                {
+                    initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+                    well_formed_preferences
+                    always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
+                } implies eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
             }
         } for exactly 1 Status, exactly 1 PxPrefs, exactly 1 RxPrefs, exactly 0 Matching is theorem
-
-        alwaysTerminate: {
-            {
-                initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-                well_formed_preferences
-                always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-            } implies eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        } for exactly 1 Status, exactly 1 PxPrefs, exactly 1 RxPrefs, exactly 0 Matching is theorem
-        */
 
         someValidMatching: {
             some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs, p1,p2 : Proposer, r1,r2: Receiver |{
@@ -358,8 +352,4 @@ test suite for matching {
         } for 5 Proposer, 5 Receiver is theorem
     }
 }
-
-test suite for wellformed_matching_px_pref_rx_pref {
-}
-
 

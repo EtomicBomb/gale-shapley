@@ -43,6 +43,8 @@ pred wellformed_matching_px_pref_rx_pref {
     well_formed_preferences
 }
 
+// absence of blocking pair: no pair of proposers and receivers would rather
+// be with eachother than their current match
 pred stable_blocking_pair[m: set Proposer -> Receiver, px_prefs: func Proposer -> PxPref, rx_prefs: func Receiver -> RxPref] {
     no px: Proposer, rx: Receiver | {
         some px_prefs[px].m_px_pref[rx]
@@ -107,100 +109,3 @@ pred terminal_status[s: Status, px_prefs: func Proposer -> PxPref, rx_prefs: fun
     -- receivers end up with at most one offer: an offer that they are okay with
     all rx: Receiver | lone s.offer.rx and s.offer.rx in (rx_prefs.m_rx_pref[rx]).Int
 }
-
-pred lying[lying_rx: Receiver, true_rx_prefs, false_rx_prefs: RxPrefs] {
-    //all receiver except lying_rx have the same preferences
-    all rx : Receiver - lying_rx {
-        false_rx_prefs.m_rx_prefs.m_rx_pref[rx] = true_rx_prefs.m_rx_prefs.m_rx_pref[rx] 
-    }
-    //lying only represents their most preferred proposer and no one else
-    false_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] != true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx] 
-}
-
-run {
-    some disj s1, s2: Status, px_prefs: PxPrefs, true_rx_prefs, false_rx_prefs: RxPrefs, lying_rx: Receiver {
-        lying[lying_rx, true_rx_prefs, false_rx_prefs]
-        //just to ensure that all proposers and receivers have 3 preferences
-        all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
-        all rx: Receiver | #((true_rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
-
-        initial_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-        initial_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-        always well_formed_preferences
-        always matching_step[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-        always matching_step[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-        eventually {
-            terminal_status[s1, px_prefs.m_px_prefs, true_rx_prefs.m_rx_prefs]
-            terminal_status[s2, px_prefs.m_px_prefs, false_rx_prefs.m_rx_prefs]
-            //lying_rx gets a more favorable match under s2 than s1, according to their true_rx_prefs
-            true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s2.offer.lying_rx] < true_rx_prefs.m_rx_prefs.m_rx_pref[lying_rx][s1.offer.lying_rx]
-        
-        }
-    }
-} for 0 Matching, exactly 3 Receiver, exactly 3 Proposer, exactly 1 PxPrefs, exactly 2 RxPrefs, exactly 2 Status
-
-
-run {
-    some s: Status, px_prefs: PxPrefs, rx_prefs: RxPrefs {
-        initial_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        always well_formed_preferences
-        always matching_step[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        eventually terminal_status[s, px_prefs.m_px_prefs, rx_prefs.m_rx_prefs]
-        all px: Proposer | #((px_prefs.m_px_prefs[px]).m_px_pref) = 3
-        all rx: Receiver | #((rx_prefs.m_rx_prefs[rx]).m_rx_pref) = 3
-        #Proposer.(Status.offer) = 2
-    }
-
-
-   
-} for exactly 3 Receiver, exactly 3 Proposer, exactly 1 RxPrefs, exactly 1 PxPrefs, exactly 1 Status
-
---------------- end stable matching algorithm -------------------------------------
-
-//A set of employers with unfilled positions
-//A one-dimensional array indexed by employers, specifying the preference index of the next applicant to whom the employer would send an offer, initially 1 for each employer
-//A two-dimensional array indexed by an employer and a number i {\displaystyle i} from 1 to n {\displaystyle n}, naming the applicant who is each employer's i {\displaystyle i}th preference
-//A one-dimensional array indexed by applicants, specifying their current employer, initially a sentinel value such as 0 indicating they are unemployed
-//A two-dimensional array indexed by an applicant and an employer, specifying the position of that employer in the applicant's preference list
-
-// https://csci1710.github.io/forge-documentation/forge-standard-library/helpers.html?highlight=sequen#sequence-helpers
-
-//Gale–Shapley algorithm
-
-/**
-
-STEP 1: Step 1
---Each proposer proposes to his most preferred, acceptable receiver.
-(if a proposer finds all receiver unacceptable they match to themselves).
-
---Each receiver who received at least one offer
-temporarily holds the offer from the most preferred proposer among those
-who made an offer to her and are acceptable rejects the other offer(s).
-
-
-Step k, k ≥ 2
-
---Each proposer whose offer has been rejected in the previous step proposes to
-his most preferred receiver among the acceptable receivers they has not yet
-proposed to.
-(if there is no such receiver they match to themselves).
-
-
---Each receiver who received at least one offer in this step
-temporarily holds the offer from the most preferred proposer among
-    1)those who made an offer to her in this step and are acceptable.
-    2)the proposer she held from the previous step (if any).
-rejects the other offer(s)
-
-
-End: The algorithm stops when no proposer has an offer that is rejected.
-
-
-Final matching:
-Each receiver is matched to the proposer whose offer she was holding
-when the algorithm stopped (if any).
-
-Each proposer is matched to the receiver they were temporarily matched
-when the algorithm stoped (if any).
-
-*/
