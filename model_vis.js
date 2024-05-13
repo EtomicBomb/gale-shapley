@@ -14,7 +14,6 @@ const proposerPrefSigField = instance.field("m_px_pref");
 const offer_grid_width = 100;
 const stage_width = 530;
 const stage_height = 723;
-const offer_grid_space = 30;
 const offer_grid_y_pos = initialYPos + 2 * grid_space;
 const offer_grid_num_cols = 2;
 
@@ -206,8 +205,7 @@ function visualElementsForOffers() {
   Object.entries(offers).forEach(([key, value], index) => {
     console.log(`key ${key}`);
     const num_of_rows = Object.entries(value).length;
-    const grid_x_location =
-      initialXPos + index * offer_grid_width + index * offer_grid_space;
+    const grid_x_location = initialXPos + grid_space * index;
     console.log(`rows ${num_of_rows}`);
     const grid = initializeGrid(
       num_of_rows,
